@@ -13,17 +13,20 @@
     videoMemStart equ 0A000h
     uiRegionStart equ 57600
     uiHealthBarStart equ 59205
+    uiTimeBarStart equ 59385
     
     ;UI widths
     healthBarWidth dw 130
+    timeBarWidth dw 130
     
     
     screenWidth equ 320
     screenHeight equ 200
     
     ;UI colors
-    uiBackgroundColor equ 7 ; Color attribute (e.g., white)
-    uiHealthBarColor equ 4 ; Color attribute (e.g., white)
+    uiBackgroundColor equ 7 
+    uiHealthBarColor equ 4
+    uiTimeBarColor equ 11 
 .code
 
 SET_VIDEO_MODE proc
@@ -51,19 +54,43 @@ PRINT_UI proc
     
     mov dx, 10
     mov di, uiHealthBarStart
-    LOOP_UI_HEALTHBAR:
-        mov al, uiHealthBarColor
-        mov cx, healthBarWidth
-        rep stosb
-        add di, screenWidth          ; Repeat the store operation to write pixels
-        sub di, healthBarWidth
-        dec dx
-        cmp dx, bx
-        jne LOOP_UI_HEALTHBAR
+    mov al, uiHealthBarColor
+    mov cx, healthBarWidth
+    
+    call PRINT_UI_BAR
+        
+    mov dx, 10
+    mov di, uiTimeBarStart
+    mov al, uiTimeBarColor
+    mov cx, timeBarWidth
+    
+    call PRINT_UI_BAR
+
     ret
 endp
 
+; Proc para escrever uma barra na UI
+; Recebe altura em DX
+; Recebe em DI o Endere?o de inicio
+; Recebe a largura da barra em CX
+; Recebe em AL a cor
+PRINT_UI_BAR proc
 
+    push dx
+
+    LOOP_UI_BAR:
+        push cx
+        rep stosb
+        pop cx
+        add di, screenWidth
+        sub di, cx
+        dec dx
+        cmp dx, bx
+        jne LOOP_UI_BAR
+        
+    pop dx
+    ret
+endp
 
 INICIO:
     mov ax, @data
