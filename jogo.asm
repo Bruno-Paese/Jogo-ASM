@@ -4,10 +4,10 @@
 
 .data
     ;Sprites
-    spaceshipSprite db "00FFFFF000 0F33300000 F33F000000 33FFFFFF00 3FFFF11FFF 3FFFF11FFF 33FFFFFF00 F33F000000 0F33300000?00FFFFF000"
-    asteroidSprite db "0077777700 0778887770 7788887777 7888877787 7888777887 7887778887 7777788887 7778888877 0777888770?0077777700"
-    shieldSprite db "0001111000 001FFFF100 01F1111F10 1F111111F1 1F333333F1 1F333333F1 1FF3333FF1 01FF33FF10 001FFFF100??0001111000"
-    healthSprite db "0002222000 0021111200 02FF22FF20 2FFF22FFF2 2F222222F2 2F222222F2 2FFF22FFF2 02FF22FF20 0021111200?0002222000"
+    spaceshipSprite db 0,0,0Fh,0Fh,0Fh,0Fh,0Fh,0,0,0,0,0Fh,3,3,3,0,0,0,0,0,0Fh,3,3,0Fh,0,0,0,0,0,0,3,3,0Fh,0Fh,0Fh,0Fh,0Fh,0Fh,0,0,3,0Fh,0Fh,0Fh,0Fh,1,1,0Fh,0Fh,0Fh,3,0Fh,0Fh,0Fh,0Fh,1,1,0Fh,0Fh,0Fh,3,3,0Fh,0Fh,0Fh,0Fh,0Fh,0Fh,0,0,0Fh,3,3,0Fh,0,0,0,0,0,0,0,0Fh,3,3,3,0,0,0,0,0,0,0,0Fh,0Fh,0Fh,0Fh,0Fh,0,0,0    
+    asteroidSprite db 0,0,7,7,7,7,7,7,0,0,0,7,7,8,8,8,7,7,7,0,7,7,8,8,8,8,7,7,7,7,7,8,8,8,8,7,7,7,8,7,7,8,8,8,7,7,7,8,8,7,7,8,8,7,7,7,8,8,8,7,7,7,7,7,7,8,8,8,8,7,7,7,7,8,8,8,8,8,7,7,0,7,7,7,8,8,8,7,7,0,0,0,7,7,7,7,7,7,0,0,0
+    shieldSprite db 0,0,0,1,1,1,1,0,0,0,0,0,1,0Fh,0Fh,0Fh,0Fh,1,0,0,0,1,0Fh,1,1,1,1,0Fh,1,0,1,0Fh,1,1,1,1,1,1,0Fh,1,1,0Fh,3,3,3,3,3,3,0Fh,1,1,0Fh,3,3,3,3,3,3,0Fh,1,1,0Fh,0Fh,3,3,3,3,0Fh,0Fh,1,0,1,0Fh,0Fh,3,3,0Fh,0Fh,1,0,0,0,1,0Fh,0Fh,0Fh,0Fh,1,0,0,0,0,0,1,1,1,1,0,0,0
+    healthSprite db 0,0,0,2,2,2,2,0,0,0,0,0,2,0Fh,0Fh,0Fh,0Fh,2,0,0,0,2,0Fh,0Fh,2,2,0Fh,0Fh,2,0,2,0Fh,0Fh,0Fh,2,2,0Fh,0Fh,0Fh,2,2,0Fh,2,2,2,2,2,2,0Fh,2,2,0Fh,2,2,2,2,2,2,0Fh,2,2,0Fh,0Fh,0Fh,2,2,0Fh,0Fh,0Fh,2,0,2,0Fh,0Fh,2,2,0Fh,0Fh,2,0,0,0,2,0Fh,0Fh,0Fh,0Fh,2,0,0,0,0,0,2,2,2,2,0,0,0
     
     ;Locais de inicio de v?deo
     videoMemStart equ 0A000h
@@ -26,7 +26,12 @@
     ;UI colors
     uiBackgroundColor equ 7 
     uiHealthBarColor equ 4
-    uiTimeBarColor equ 11 
+    uiTimeBarColor equ 11
+    
+    ;timer
+    timer dw 1300
+    timeBarScaleDecrement equ 10
+    timeScaleInterval equ 100
 .code
 
 SET_VIDEO_MODE proc
@@ -75,7 +80,7 @@ endp
 ; Recebe a largura da barra em CX
 ; Recebe em AL a cor
 PRINT_UI_BAR proc
-
+    push di
     push dx
 
     LOOP_UI_BAR:
@@ -89,6 +94,51 @@ PRINT_UI_BAR proc
         jne LOOP_UI_BAR
         
     pop dx
+    pop di
+    ret
+endp
+
+;Bloqueia a execu??o do programa na quantidade definida
+;na constante timeScaleInterval
+BLOCK_GAME_EXECUTION proc
+    push cx
+
+    xor cx, cx
+    mov cx, timeScaleInterval
+    int 15h
+    
+    pop cx
+    ret
+endp
+
+MAIN_LOOP proc
+    
+    
+    
+    ret
+endp
+
+;Recebe sprite em SI
+;DI recebe a posi??o do primeiro pixel do sprite
+PRINT_SPRITE proc
+        push dx
+        push cx
+        push di
+        push si
+
+        mov dx, 10
+        PRINT_SPRITE_LOOP:
+            mov cx, 10
+            rep movsb 
+            dec dx
+            add di, 310
+            cmp dx, 0
+            jnz PRINT_SPRITE_LOOP
+         
+        pop si
+        pop di
+        pop cx
+        pop dx
     ret
 endp
 
@@ -102,6 +152,10 @@ INICIO:
 
     call PRINT_UI
 
+    mov si, offset healthSprite
+    mov di, 0
+    call PRINT_SPRITE
+    
     mov ax, 4Ch     ; Function to terminate the program
     int 21h         ; Execute
 end INICIO
