@@ -1,4 +1,4 @@
-.model small
+.model medium
 
 .stack 100H ; define a stack of 256 bytes (100H)
 
@@ -8,6 +8,16 @@
     asteroidSprite db 0,0,7,7,7,7,7,7,0,0,0,7,7,8,8,8,7,7,7,0,7,7,8,8,8,8,7,7,7,7,7,8,8,8,8,7,7,7,8,7,7,8,8,8,7,7,7,8,8,7,7,8,8,7,7,7,8,8,8,7,7,7,7,7,7,8,8,8,8,7,7,7,7,8,8,8,8,8,7,7,0,7,7,7,8,8,8,7,7,0,0,0,7,7,7,7,7,7,0,0,0
     shieldSprite db 0,0,0,1,1,1,1,0,0,0,0,0,1,0Fh,0Fh,0Fh,0Fh,1,0,0,0,1,0Fh,1,1,1,1,0Fh,1,0,1,0Fh,1,1,1,1,1,1,0Fh,1,1,0Fh,3,3,3,3,3,3,0Fh,1,1,0Fh,3,3,3,3,3,3,0Fh,1,1,0Fh,0Fh,3,3,3,3,0Fh,0Fh,1,0,1,0Fh,0Fh,3,3,0Fh,0Fh,1,0,0,0,1,0Fh,0Fh,0Fh,0Fh,1,0,0,0,0,0,1,1,1,1,0,0,0
     healthSprite db 0,0,0,2,2,2,2,0,0,0,0,0,2,0Fh,0Fh,0Fh,0Fh,2,0,0,0,2,0Fh,0Fh,2,2,0Fh,0Fh,2,0,2,0Fh,0Fh,0Fh,2,2,0Fh,0Fh,0Fh,2,2,0Fh,2,2,2,2,2,2,0Fh,2,2,0Fh,2,2,2,2,2,2,0Fh,2,2,0Fh,0Fh,0Fh,2,2,0Fh,0Fh,0Fh,2,0,2,0Fh,0Fh,2,2,0Fh,0Fh,2,0,0,0,2,0Fh,0Fh,0Fh,0Fh,2,0,0,0,0,0,2,2,2,2,0,0,0
+    
+    ;GameName
+    gameName db "  ___      _                 _     _   _    _ ", 0
+             db " / _ \    | |               (_)   | | | |  | |", 0
+             db "/ /\ \___| | ___ _ __ ___  _  __| | | |  | | __ _ _   _", 0
+             db "|  _  / __| __/ _ \ '__/ _ \| |/ _` | | |/\| |/ _` | | | |", 0
+             db "| | | \__ \ ||  __/ | | (_) | | (_| | \  /\  / (_| | |_| |", 0
+             db "\_| |_/___/\__\___|_|  \___/|_|\__,_|  \/  \/ \__,_|\__, |", 0
+             db "                                                     __/ |", 0
+             db "                                                    |___/", 0
     
     ;Locais de inicio de v?deo
     videoMemStart equ 0A000h
@@ -30,13 +40,38 @@
     
     ;timer
     timer dw 1300
-    timeBarScaleDecrement equ 10
-    timeScaleInterval equ 100
+    timeBarScaleDecrement equ 1
+    timeScaleIntervalCX equ 1h
+    timeScaleIntervalDX equ 086A0h
 .code
 
 SET_VIDEO_MODE proc
     mov ax, 13h
     int 10h         ; Set the video mode to mode 13h (320x200, 256 colors)
+    ret
+endp
+
+; Proc para escrever uma barra na UI
+; Recebe altura em DX
+; Recebe em DI o Endere?o de inicio
+; Recebe a largura da barra em CX
+; Recebe em AL a cor
+PRINT_UI_BAR proc
+    push di
+    push dx
+
+    LOOP_UI_BAR:
+        push cx
+        rep stosb
+        pop cx
+        add di, screenWidth
+        sub di, cx
+        dec dx
+        cmp dx, bx
+        jne LOOP_UI_BAR
+        
+    pop dx
+    pop di
     ret
 endp
 
@@ -69,32 +104,8 @@ PRINT_UI proc
     mov al, uiTimeBarColor
     mov cx, timeBarWidth
     
-    call PRINT_UI_BAR
+   call PRINT_UI_BAR
 
-    ret
-endp
-
-; Proc para escrever uma barra na UI
-; Recebe altura em DX
-; Recebe em DI o Endere?o de inicio
-; Recebe a largura da barra em CX
-; Recebe em AL a cor
-PRINT_UI_BAR proc
-    push di
-    push dx
-
-    LOOP_UI_BAR:
-        push cx
-        rep stosb
-        pop cx
-        add di, screenWidth
-        sub di, cx
-        dec dx
-        cmp dx, bx
-        jne LOOP_UI_BAR
-        
-    pop dx
-    pop di
     ret
 endp
 
@@ -102,19 +113,55 @@ endp
 ;na constante timeScaleInterval
 BLOCK_GAME_EXECUTION proc
     push cx
-
-    xor cx, cx
-    mov cx, timeScaleInterval
+    push dx
+    
+    mov ah, 86h
+    mov cx, timeScaleIntervalCX
+    mov dx, timeScaleIntervalDX
     int 15h
     
+    pop dx
     pop cx
     ret
 endp
 
-MAIN_LOOP proc
+GAME_TIMER proc
+    push ax
+    push dx
+    push cx
+    
+    mov ax, timer
+    sub ax, timeBarScaleDecrement
+    mov timer, ax
+
+    xor dx, dx  ; Clear DX
+    mov cx, 10  ; Divisor
+    div cx      ; Divide AX by 10, result in AX, remainder in DX
+
+    mov timeBarWidth, ax
+    
+    ; Clear the remaining time bar space with the background color
+    mov dx, 10
+    mov di, uiTimeBarStart
+    mov al, uiBackgroundColor
+    mov cx, 130  ; Use the constant for the width
+    call PRINT_UI_BAR
+    
+    mov dx, 10
+    mov di, uiTimeBarStart
+    mov al, uiTimeBarColor
+    mov cx, timeBarWidth  ; Use the constant for the width
+    call PRINT_UI_BAR
+
+    cmp cx, 0
+    jne SKIP_END_CONDITION
+    MOV SI, 1
     
     
-    
+    SKIP_END_CONDITION:
+        pop cx
+        pop dx
+        pop ax
     ret
 endp
 
@@ -142,6 +189,19 @@ PRINT_SPRITE proc
     ret
 endp
 
+MAIN_GAME_LOOP proc
+    
+    xor SI, SI
+    MAIN_LOOP:
+    
+        call GAME_TIMER
+        call BLOCK_GAME_EXECUTION
+    
+        cmp SI, 1
+        jne MAIN_LOOP
+    ret
+endp
+
 INICIO:
     mov ax, @data
     mov ds, ax
@@ -151,11 +211,10 @@ INICIO:
     call SET_VIDEO_MODE
 
     call PRINT_UI
-
-    mov si, offset healthSprite
-    mov di, 0
-    call PRINT_SPRITE
     
+    call MAIN_GAME_LOOP
+    
+
     mov ax, 4Ch     ; Function to terminate the program
     int 21h         ; Execute
 end INICIO
