@@ -24,6 +24,8 @@
     uiRegionStart equ 57600
     uiHealthBarStart equ 59205
     uiTimeBarStart equ 59385
+    playerInitialPosition equ 30420
+    playerPositionY equ 30420
     
     ;UI widths
     healthBarWidth dw 130
@@ -41,7 +43,7 @@
     ;timer
     timer dw 1300
     timeBarScaleDecrement equ 1
-    timeScaleIntervalCX equ 1h
+    timeScaleIntervalCX equ 1
     timeScaleIntervalDX equ 086A0h
 .code
 
@@ -114,12 +116,14 @@ endp
 BLOCK_GAME_EXECUTION proc
     push cx
     push dx
+    push ax
     
     mov ah, 86h
     mov cx, timeScaleIntervalCX
     mov dx, timeScaleIntervalDX
     int 15h
     
+    pop ax
     pop dx
     pop cx
     ret
@@ -176,7 +180,7 @@ PRINT_SPRITE proc
         mov dx, 10
         PRINT_SPRITE_LOOP:
             mov cx, 10
-            rep movsb 
+            rep stosb 
             dec dx
             add di, 310
             cmp dx, 0
@@ -189,12 +193,73 @@ PRINT_SPRITE proc
     ret
 endp
 
-MAIN_GAME_LOOP proc
+;Removes a sprite from the screen
+;DI recebe a posi??o do primeiro pixel do sprite
+REMOVE_SPRITE proc
+        push ax
+        push dx
+        push cx
+        push di
+        push si
+
+        mov dx, 10
+        mov al, 0
+        PRINT_SPRITE_LOOP:
+            mov cx, 10
+            rep movsb 
+            dec dx
+            add di, 310
+            cmp dx, 0
+            jnz PRINT_SPRITE_LOOP
+         
+        pop si
+        pop di
+        pop cx
+        pop dx
+        pop ax
+    ret
+endp
+
+READ_KEYBOARD_INPUT proc
     
+    mov ah, 01
+    int 16h
+    jnz END_KI
+    
+    cmp al, 119
+    jz PLAYER_UP
+    
+    PLAYER_UP:
+        mov ax, playerPositionY
+        sub ax, screenWidth
+        mov playerPositionY, ax
+
+    END_KI:
+    ret
+endp
+
+PRINT_PLAYER proc
+    
+    mov SI, offset spaceShipSprite
+    mov DI, playerPositionY
+
+    call REMOVE_SPRITE
+    
+    call READ_KEYBOARD_INPUT
+    
+    call PRINT_SPRITE
+    
+    ret
+endp
+
+MAIN_GAME proc
+
     xor SI, SI
     MAIN_LOOP:
     
         call GAME_TIMER
+        call PRINT_PLAYER
+        
         call BLOCK_GAME_EXECUTION
     
         cmp SI, 1
@@ -212,7 +277,7 @@ INICIO:
 
     call PRINT_UI
     
-    call MAIN_GAME_LOOP
+    call MAIN_GAME
     
 
     mov ax, 4Ch     ; Function to terminate the program
