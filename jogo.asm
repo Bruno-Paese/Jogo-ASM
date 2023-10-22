@@ -4,10 +4,14 @@
 
 .data
 
-    ;Controles / códigos ASCII
-    upArrow equ 4800h
-    downArrow equ 5000h
-    accept equ 1C0Dh ; ENTER (enter is a reserved word)
+    ; Controles (Scan code)
+    ; (codigos para utilizar com a int 16h 00h)
+    ; Scan code table: https://www.win.tue.nl/~aeb/linux/kbd/scancodes-1.html
+    upArrow equ 48h
+    downArrow equ 50h
+    accept equ 1Ch ; ENTER (enter is a reserved word)
+    
+    ; Codigos ASCII
     CR equ 13
     LF equ 10
  
@@ -288,13 +292,13 @@ MENU_INICIAL proc
     int 16h
     
     ; Enter
-    cmp ax, accept 
+    cmp ah, accept 
     jz MENU_INICIAL_ACCEPT
     
     ; Seta para cima ou para baixo
-    cmp ax, upArrow 
+    cmp ah, upArrow 
     jz MENU_INICIAL_TOGGLE_OPTION
-    cmp ax, downArrow
+    cmp ah, downArrow
     jz MENU_INICIAL_TOGGLE_OPTION
     
     ; Qualquer outra tecla
