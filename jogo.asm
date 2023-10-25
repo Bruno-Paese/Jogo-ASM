@@ -1,4 +1,4 @@
-.model medium
+      .model medium
 
 .stack 100H ; define a stack of 256 bytes (100H)
 
@@ -153,11 +153,12 @@ CLEAR_SCREEN proc
     mov di, 0
     mov al, 0
     mov cx, 64000
-    rep movsb
+    rep stosb
    
     pop di
     pop cx
-    pop ax  
+    pop ax 
+    ret 
 endp
 
 ;-----------------------------------------------------------------------------------------------;
