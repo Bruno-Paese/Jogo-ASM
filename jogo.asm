@@ -606,7 +606,7 @@ SPAWN_SPRITE_END_SCREEN proc
     push si
     push di
           
-    mov bx, 190
+    mov bx, 170 ; Screen height - sprite size (10) - UI bar size (20)
     call GENERATE_RANDOM_NUMBER
     mov ax, screenWidth
     mul dx
