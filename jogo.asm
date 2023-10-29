@@ -1,4 +1,4 @@
-.model small
+       .model small
 
 .stack 200H ; define a stack of 256 bytes (100H)
 
@@ -71,6 +71,13 @@
    
     ;player constants
     playerMovementIncrement equ 1280
+    
+    ;cycles per spawn
+    ;   defines the interval between each spawn in main game loop unit
+    ;   preferentialy, use values dividible by the same divisors of 250. ex: 10 (10), 12 (2), 65 (5)
+    asteroidSpawnCycle equ 50
+    maxSpawnCycle equ 249 ; Controls when counter should reset (Must be less than 255, otherwise code must be changed)
+    
 .code
 
 ;-----------------------------------------------------------------------------------------------;
@@ -161,6 +168,29 @@ CLEAR_SCREEN proc
     pop cx
     pop ax
   ret
+endp
+
+; Gera um n?mero aleat?rio considerando o tempo do sistema e a posi??o do player
+; Parametros
+; BX: numero aleat?rio maximo + 1
+; Retorno
+; DX: numero aleaatorio 
+GENERATE_RANDOM_NUMBER proc
+    push ax
+    push bx
+
+    mov ah, 0
+    int 1ah         ; Interrup??o para pegar a hora do sistema
+
+    mov ax, dx
+    add ax, playerPositionY
+    xor dx, dx
+    div bx
+
+    pop bx
+    pop ax
+
+    ret
 endp
 
 ;-----------------------------------------------------------------------------------------------;
@@ -566,20 +596,74 @@ BufferCleared:
     ret
 CLEAR_KEYBOARD_BUFFER endp
 
+; Spawna um asteroide/vida/escudo no final da tela
+; Parametros
+; SI: sprite para spawnar
+SPAWN_SPRITE_END_SCREEN proc
+
+    push ax
+    push dx
+    push si
+    push di
+          
+    mov bx, 190
+    call GENERATE_RANDOM_NUMBER
+    mov ax, screenWidth
+    mul dx
+    add ax, 310 ; Para printar no final da linha
+    mov di, ax
+    call PRINT_SPRITE
+    
+    pop di
+    pop si
+    pop dx
+    pop ax
+    
+    ret
+endp
+
 MAIN_GAME proc
 
     xor SI, SI
     call PRINT_PLAYER
+    
+    xor cx, cx ; Used to control main cycle count (control spawns)
 
     MAIN_LOOP:
    
-        call GAME_TIMER
+    ;call GAME_TIMER
         call READ_KEYBOARD_INPUT
         
         call CLEAR_KEYBOARD_BUFFER
        
-        call BLOCK_GAME_EXECUTION
         
+        
+        ; Controls asteroid spawn cycle
+        mov bx, asteroidSpawnCycle
+        mov ax, cx
+        div bl
+        or ah, ah ; Verifica se resto e zero
+        jz MAIN_LOOP_SPAWN_ASTEROID
+        jmp MAIN_LOOP_SPAWN_ASTEROID_END
+        MAIN_LOOP_SPAWN_ASTEROID:
+            mov si, offset asteroidSprite
+            call SPAWN_SPRITE_END_SCREEN
+        MAIN_LOOP_SPAWN_ASTEROID_END:
+            
+        ; Resets counter when it reaches to max value
+        mov bl, maxSpawnCycle
+        mov ax, cx
+        div bl
+        or ah, ah ; Verifica se resto e zero
+        jz MAIN_LOOP_RESET_COUNTER
+        jmp MAIN_LOOP_RESET_COUNTER_END
+        MAIN_LOOP_RESET_COUNTER:
+            xor cx, cx
+        MAIN_LOOP_RESET_COUNTER_END:
+        
+        
+        inc cx
+        call BLOCK_GAME_EXECUTION
    
         cmp SI, 1
         jne MAIN_LOOP
@@ -594,12 +678,12 @@ INICIO:
 
     call SET_VIDEO_MODE
 
-    call MENU_INICIAL
+    ;call MENU_INICIAL
    
-    or bh, bh ; Verifica opcao selecionada (se deve sair do jogo)
-    jnz SAIR_JOGO
+    ;or bh, bh ; Verifica opcao selecionada (se deve sair do jogo)
+    ;jnz SAIR_JOGO
    
-    call CLEAR_SCREEN
+    ;call CLEAR_SCREEN
    
     ; Jogo
     call PRINT_UI
