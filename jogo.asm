@@ -1,6 +1,6 @@
-.model medium
+.model small
 
-.stack 100H ; define a stack of 256 bytes (100H)
+.stack 200H ; define a stack of 256 bytes (100H)
 
 .data
 
@@ -48,7 +48,7 @@
     uiHealthBarStart equ 59205
     uiTimeBarStart equ 59385
     playerInitialPosition equ 30420
-    playerPositionY dw 30420
+    playerPositionY dw 29780
    
     ;UI widths
     healthBarWidth dw 130
@@ -69,6 +69,8 @@
     timeScaleIntervalCX equ 1
     timeScaleIntervalDX equ 086A0h
    
+    ;player constants
+    playerMovementIncrement equ 1280
 .code
 
 ;-----------------------------------------------------------------------------------------------;
@@ -157,7 +159,8 @@ CLEAR_SCREEN proc
    
     pop di
     pop cx
-    pop ax  
+    pop ax
+  ret
 endp
 
 ;-----------------------------------------------------------------------------------------------;
@@ -490,7 +493,11 @@ PRINT_PLAYER proc
 endp
 
 READ_KEYBOARD_INPUT proc
-   
+    push di
+    push ax
+    push bx
+
+
     ; Check if a key is available in the keyboard buffer
     mov ah, 01h
     int 16h
@@ -509,36 +516,55 @@ READ_KEYBOARD_INPUT proc
     je PLAYER_UP
     
     
-    cmp al, 's'      ; Check if the key is 'w'
+    cmp al, 's'      ; Check if the key is 's'
     je PLAYER_DOWN
     
     jmp END_KI
    
     PLAYER_UP:
-    
         mov ax, playerPositionY
-        sub ax, screenWidth
-        sub ax, screenWidth
+        sub ax, playerMovementIncrement
+    
+        cmp ax, 320
+        jl END_KI
+        
         mov playerPositionY, ax
    
         call PRINT_PLAYER
         jmp END_KI
         
     PLAYER_DOWN:
-
-        
         mov ax, playerPositionY
-        add ax, screenWidth
-        add ax, screenWidth
+        add ax, playerMovementIncrement
+        
         mov playerPositionY, ax
    
-        
+        call PRINT_PLAYER
         jmp END_KI
 
     END_KI:
+        pop bx
+        pop ax
+        pop di
+        
         call PRINT_PLAYER
     ret
 endp
+
+;Limpa o buffer do teclado
+CLEAR_KEYBOARD_BUFFER proc
+    mov ah, 01h 
+    int 16h       
+
+    jz BufferCleared  
+    mov ah, 00h   
+    int 16h       
+
+    jmp CLEAR_KEYBOARD_BUFFER
+
+BufferCleared:
+    ret
+CLEAR_KEYBOARD_BUFFER endp
 
 MAIN_GAME proc
 
@@ -549,6 +575,8 @@ MAIN_GAME proc
    
         call GAME_TIMER
         call READ_KEYBOARD_INPUT
+        
+        call CLEAR_KEYBOARD_BUFFER
        
         call BLOCK_GAME_EXECUTION
         
