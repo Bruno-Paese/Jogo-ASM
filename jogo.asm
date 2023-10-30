@@ -1,4 +1,4 @@
-             .model small
+                                   .model small
 
 .stack 200H ; define a stack of 256 bytes (100H)
 
@@ -641,7 +641,8 @@ SPAWN_SPRITE_END_SCREEN proc
           
     mov bx, 170 ; Screen height - sprite size (10) - UI bar size (20)
     call GENERATE_RANDOM_NUMBER
-    mov ax, screenWidth
+    mov ax, screenWidth 
+    mov dx, 0
     mul dx
     add ax, 319 ; Para printar no final da linha
     mov di, ax
@@ -656,16 +657,15 @@ SPAWN_SPRITE_END_SCREEN proc
 endp
 
 ; Parametros
-; CX: posicao inicial do sprite
+; DI: posicao inicial do sprite
 MOVE_SPRITE proc
     push si
     push di
     push ax
     
-    mov si, cx
+    mov si, di
     inc si
     mov al, es:[si]
-    mov di, cx
     call REMOVE_SPRITE           
     dec di
     mov si, offset asteroidSprite
@@ -682,18 +682,19 @@ endp
 MOVE_SPRITES proc
     push ax
     push cx
+    push di
     
     mov cx, 63999
+    xor di, di
     MOVE_SPRITES_LOOP:
-    std ; Set directional flag
     mov al, 255
-    rep scasb
-    cld ; Clear directional flag
+    repne scasb
     call MOVE_SPRITE
     or cx, cx
     dec cx
     jnz MOVE_SPRITES_LOOP
     
+    pop di
     pop cx
     pop ax
     
