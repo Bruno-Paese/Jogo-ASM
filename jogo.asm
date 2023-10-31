@@ -102,37 +102,16 @@ PRINT_SPRITE proc
         push cx
         push di
         push si
-        push ax
-        push bx
-        
-        mov bx, screenWidth
-        mov ax, di
-        add ax, 10
-        xor dx, dx
-        div bx
-        mov bx, 10
-        mov ax, screenWidth
-        cmp dx, 10
-        jl PRINT_SPRITE_END_SCREEN
-        jmp PRINT_SPRITE_SKIP
-        PRINT_SPRITE_END_SCREEN:
-        mov bx, dx
-        sub ax, bx
-        PRINT_SPRITE_SKIP:
-        
-        
-        
+
         mov dx, 10
         PRINT_SPRITE_LOOP:
-            mov cx, 1
+            mov cx, 10
             rep movsb
             dec dx
-            add di, 319
+            add di, 310
             cmp dx, 0
             jnz PRINT_SPRITE_LOOP
          
-        pop bx
-        pop ax
         pop si
         pop di
         pop cx
@@ -631,7 +610,7 @@ SPAWN_SPRITE_END_SCREEN proc
     call GENERATE_RANDOM_NUMBER
     mov ax, screenWidth
     mul dx
-    add ax, 319 ; Para printar no final da linha
+    add ax, 310 ; Para printar no final da linha
     mov di, ax
     call PRINT_SPRITE
     
