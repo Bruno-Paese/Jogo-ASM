@@ -145,8 +145,6 @@ PRINT_SPRITE proc
             or dx, dx
             jnz PRINT_SPRITE_LOOP
          
-        pop bx
-        pop ax
         pop si
         pop di
         pop cx
@@ -646,7 +644,7 @@ SPAWN_SPRITE_END_SCREEN proc
     mov ax, screenWidth 
     ;mov dx, 0 ; prints always in first line for debbuging
     mul dx
-    add ax, 319 ; Para printar no final da linha
+    add ax, 310 ; Para printar no final da linha
     mov di, ax
     call PRINT_SPRITE
     mov ax, es:[di]
