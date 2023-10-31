@@ -1,4 +1,4 @@
-                                   .model small
+                                                                .model small
 
 .stack 200H ; define a stack of 256 bytes (100H)
 
@@ -39,15 +39,12 @@
     ;Sprites
     ; Codigos:
     ; 250: Cantos da nave
-    ; 251: Heal
-    ; 252: Shield
-    ; 253: Asteroid
     ; 254: Ultimo pixel de objeto que se move para a esquerda
     ; 255: Primeiro pixel de objeto que se move para a esquerda
     spaceshipSprite db 250,0,0Fh,0Fh,0Fh,0Fh,0Fh,0,0,250,0,0Fh,3,3,3,0,0,0,0,0,0Fh,3,3,0Fh,0,0,0,0,0,0,3,3,0Fh,0Fh,0Fh,0Fh,0Fh,0Fh,0,0,3,0Fh,0Fh,0Fh,0Fh,1,1,0Fh,0Fh,0Fh,3,0Fh,0Fh,0Fh,0Fh,1,1,0Fh,0Fh,0Fh,3,3,0Fh,0Fh,0Fh,0Fh,0Fh,0Fh,0,0,0Fh,3,3,0Fh,0,0,0,0,0,0,0,0Fh,3,3,3,0,0,0,0,0,250,0,0Fh,0Fh,0Fh,0Fh,0Fh,0,0,250    
-    asteroidSprite db 255,253,7,7,7,7,7,7,0,0,0,7,7,8,8,8,7,7,7,0,7,7,8,8,8,8,7,7,7,7,7,8,8,8,8,7,7,7,8,7,7,8,8,8,7,7,7,8,8,7,7,8,8,7,7,7,8,8,8,7,7,7,7,7,7,8,8,8,8,7,7,7,7,8,8,8,8,8,7,7,0,7,7,7,8,8,8,7,7,0,0,0,7,7,7,7,7,7,0,0,254
-    shieldSprite db 255,0,252,1,1,1,1,0,0,0,0,0,1,0Fh,0Fh,0Fh,0Fh,1,0,0,0,1,0Fh,1,1,1,1,0Fh,1,0,1,0Fh,1,1,1,1,1,1,0Fh,1,1,0Fh,3,3,3,3,3,3,0Fh,1,1,0Fh,3,3,3,3,3,3,0Fh,1,1,0Fh,0Fh,3,3,3,3,0Fh,0Fh,1,0,1,0Fh,0Fh,3,3,0Fh,0Fh,1,0,0,0,1,0Fh,0Fh,0Fh,0Fh,1,0,0,0,0,0,1,1,1,1,0,0,254
-    healthSprite db 255,251,0,2,2,2,2,0,0,0,0,0,2,0Fh,0Fh,0Fh,0Fh,2,0,0,0,2,0Fh,0Fh,2,2,0Fh,0Fh,2,0,2,0Fh,0Fh,0Fh,2,2,0Fh,0Fh,0Fh,2,2,0Fh,2,2,2,2,2,2,0Fh,2,2,0Fh,2,2,2,2,2,2,0Fh,2,2,0Fh,0Fh,0Fh,2,2,0Fh,0Fh,0Fh,2,0,2,0Fh,0Fh,2,2,0Fh,0Fh,2,0,0,0,2,0Fh,0Fh,0Fh,0Fh,2,0,0,0,0,0,2,2,2,2,0,0,254
+    asteroidSprite db 255,0,7,7,7,7,7,7,0,0,0,7,7,8,8,8,7,7,7,0,7,7,8,8,8,8,7,7,7,7,7,8,8,8,8,7,7,7,8,7,7,8,8,8,7,7,7,8,8,7,7,8,8,7,7,7,8,8,8,7,7,7,7,7,7,8,8,8,8,7,7,7,7,8,8,8,8,8,7,7,0,7,7,7,8,8,8,7,7,0,0,0,7,7,7,7,7,7,0,0,254
+    shieldSprite db 255,0,0,1,1,1,1,0,0,0,0,0,1,0Fh,0Fh,0Fh,0Fh,1,0,0,0,1,0Fh,1,1,1,1,0Fh,1,0,1,0Fh,1,1,1,1,1,1,0Fh,1,1,0Fh,3,3,3,3,3,3,0Fh,1,1,0Fh,3,3,3,3,3,3,0Fh,1,1,0Fh,0Fh,3,3,3,3,0Fh,0Fh,1,0,1,0Fh,0Fh,3,3,0Fh,0Fh,1,0,0,0,1,0Fh,0Fh,0Fh,0Fh,1,0,0,0,0,0,1,1,1,1,0,0,254
+    healthSprite db 255,0,0,2,2,2,2,0,0,0,0,0,2,0Fh,0Fh,0Fh,0Fh,2,0,0,0,2,0Fh,0Fh,2,2,0Fh,0Fh,2,0,2,0Fh,0Fh,0Fh,2,2,0Fh,0Fh,0Fh,2,2,0Fh,2,2,2,2,2,2,0Fh,2,2,0Fh,2,2,2,2,2,2,0Fh,2,2,0Fh,0Fh,0Fh,2,2,0Fh,0Fh,0Fh,2,0,2,0Fh,0Fh,2,2,0Fh,0Fh,2,0,0,0,2,0Fh,0Fh,0Fh,0Fh,2,0,0,0,0,0,2,2,2,2,0,0,254
    
     ;Locais de inicio de video
     videoMemStart equ 0A000h
@@ -140,7 +137,12 @@ PRINT_SPRITE proc
             rep movsb
             dec dx
             add di, bx
-            cmp dx, 0
+            
+            ; Configura qual parte do sprite e printada
+            add si, 10
+            sub si, ax
+            
+            or dx, dx
             jnz PRINT_SPRITE_LOOP
          
         pop bx
@@ -642,7 +644,7 @@ SPAWN_SPRITE_END_SCREEN proc
     mov bx, 170 ; Screen height - sprite size (10) - UI bar size (20)
     call GENERATE_RANDOM_NUMBER
     mov ax, screenWidth 
-    mov dx, 0
+    ;mov dx, 0 ; prints always in first line for debbuging
     mul dx
     add ax, 319 ; Para printar no final da linha
     mov di, ax
@@ -656,9 +658,54 @@ SPAWN_SPRITE_END_SCREEN proc
     ret
 endp
 
+; Get which sprite is being rendered
+; Parametros:
+; DI: posicao inicial do sprite
+; Retorno:
+; SI: endereço do sprite
+GET_SPRITE proc
+    push di
+    push ax
+    push ds
+    
+    
+    mov si, di
+    mov ax, es
+    mov ds, ax
+    add si, 1280 ; Vai para primeiro pixel da quarta linha
+    lodsb
+    
+    ;shield (case 1)
+    cmp al, 1
+    mov si, offset shieldSprite
+    je GET_SPRITE_END
+    
+    ;health (case 2)
+    cmp al, 2
+    mov si, offset healthSprite
+    je GET_SPRITE_END
+    
+    ;asteroid (case 7)
+    cmp al, 7
+    mov si, offset asteroidSprite
+    je GET_SPRITE_END
+    
+    ;player (default)
+    mov si, offset spaceshipSprite
+    
+    GET_SPRITE_END:
+    
+    pop ds
+    pop ax
+    pop di    
+    ret
+endp
+
+
+; Move sprite um pixel para a esquerda
 ; Parametros
 ; DI: posicao inicial do sprite
-MOVE_SPRITE proc
+MOVE_SPRITE_LEFT proc
     push si
     push di
     push ax
@@ -666,9 +713,9 @@ MOVE_SPRITE proc
     mov si, di
     inc si
     mov al, es:[si]
+    call GET_SPRITE
     call REMOVE_SPRITE           
     dec di
-    mov si, offset asteroidSprite
     call PRINT_SPRITE
           
     pop ax      
@@ -681,21 +728,41 @@ endp
 ; Sem parametros
 MOVE_SPRITES proc
     push ax
+    push bx
     push cx
     push di
+    push dx
     
     mov cx, 63999
+    mov bx, screenWidth
     xor di, di
+    
     MOVE_SPRITES_LOOP:
     mov al, 255
-    repne scasb
-    call MOVE_SPRITE
-    or cx, cx
-    dec cx
-    jnz MOVE_SPRITES_LOOP
+        repne scasb
+        jne MOVE_SPRITES_BREAK
+        dec di
+        
+        ; Calcula se deve mover ou remover sprite
+        mov ax, di
+        xor dx, dx
+        div bx
+        or dx, dx
+        jz MOVE_SPRITES_REMOVE
+            call MOVE_SPRITE_LEFT
+            jmp MOVE_SPRITES_CONDITION_END
+        MOVE_SPRITES_REMOVE:
+            call REMOVE_SPRITE
+        MOVE_SPRITES_CONDITION_END:
+        
+        dec cx
+    jmp MOVE_SPRITES_LOOP
     
+    MOVE_SPRITES_BREAK:
+    pop dx
     pop di
     pop cx
+    pop bx
     pop ax
     
     ret  
@@ -714,9 +781,10 @@ MAIN_GAME proc
         call READ_KEYBOARD_INPUT
         
         call CLEAR_KEYBOARD_BUFFER
-            
+
+        
         ; Controls asteroid spawn cycle
-        mov bx, asteroidSpawnCycle
+        mov bl, asteroidSpawnCycle
         mov ax, cx
         div bl
         or ah, ah ; Verifica se resto e zero
@@ -726,7 +794,8 @@ MAIN_GAME proc
             mov si, offset asteroidSprite
             call SPAWN_SPRITE_END_SCREEN
         MAIN_LOOP_SPAWN_ASTEROID_END:
-            
+
+        
         ; Resets counter when it reaches to max value
         mov bl, maxSpawnCycle
         mov ax, cx
@@ -735,10 +804,11 @@ MAIN_GAME proc
         jz MAIN_LOOP_RESET_COUNTER
         jmp MAIN_LOOP_RESET_COUNTER_END
         MAIN_LOOP_RESET_COUNTER:
+        
             xor cx, cx
         MAIN_LOOP_RESET_COUNTER_END:
         
-        call MOVE_SPRITES
+        call MOVE_SPRITES  
         
         inc cx
         call BLOCK_GAME_EXECUTION
