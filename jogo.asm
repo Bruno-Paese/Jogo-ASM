@@ -144,7 +144,9 @@ PRINT_SPRITE proc
             
             or dx, dx
             jnz PRINT_SPRITE_LOOP
-         
+        
+        pop bx
+        pop ax
         pop si
         pop di
         pop cx
