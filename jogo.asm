@@ -665,7 +665,7 @@ endp
 ; Parametros:
 ; DI: posicao inicial do sprite
 ; Retorno:
-; SI: endereço do sprite
+; SI: endere?o do sprite
 GET_SPRITE proc
     push di
     push ax
@@ -771,6 +771,61 @@ MOVE_SPRITES proc
     ret  
 endp
 
+CHECK_PLAYER_COLLISION proc
+    mov di, playerPositionY
+    
+    sub di, 320
+    mov cx, 11
+    xor al, al
+    repe scasb
+    je CHECK_PLAYER_COLLISION_RIGHT
+    
+    ; Collision upside
+    
+    
+    
+    
+    jmp CHECK_PLAYER_COLLISION_HANDLER
+    
+    CHECK_PLAYER_COLLISION_RIGHT:
+    mov cx, 10
+    add di, 320
+    CHECK_PLAYER_COLLISION_RIGHT_LOOP:
+        cmp al, es:[di]
+        jne CHECK_PLAYER_COLLIDED_RIGHT
+        add di, 320
+        sub cx
+        or cx, cx
+        jz CHECK_PLAYER_COLLISION_BOTTOM
+     jmp CHECK_PLAYER_COLLISION_RIGHT_LOOP
+        
+    ; Collision rightside
+    CHECK_PLAYER_COLLIDED_RIGHT:
+    
+    
+        
+    jmp CHECK_PLAYER_COLLISION_HANDLER
+    
+    CHECK_PLAYER_COLLISION_BOTTOM:
+    std
+    mov cx, 10
+    repe scasb
+    cld
+    je CHECK_PLAYER_COLLISION_BREAK
+    
+    ; Collision bottomside
+        
+
+    
+    CHECK_PLAYER_COLLISION_HANDLER:
+    ; TODO: Implementar acao que deve ser feita ao colidir
+    
+    CHECK_PLAYER_COLLISION_BREAK:
+    
+    
+    ret
+endp
+
 MAIN_GAME proc
 
     xor SI, SI
@@ -811,7 +866,9 @@ MAIN_GAME proc
             xor cx, cx
         MAIN_LOOP_RESET_COUNTER_END:
         
-        call MOVE_SPRITES  
+        call MOVE_SPRITES 
+       
+        call CHECK_PLAYER_COLLISION 
         
         inc cx
         call BLOCK_GAME_EXECUTION
