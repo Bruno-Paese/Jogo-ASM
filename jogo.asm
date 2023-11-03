@@ -590,8 +590,8 @@ READ_KEYBOARD_INPUT proc
         mov ax, playerPositionY
         sub ax, playerMovementIncrement
     
-        cmp ax, 320
-        jl END_KI
+        cmp ax, 280h
+        jbe END_KI
         
         mov playerPositionY, ax
    
@@ -601,7 +601,10 @@ READ_KEYBOARD_INPUT proc
     PLAYER_DOWN:
         mov ax, playerPositionY
         add ax, playerMovementIncrement
-        
+
+        cmp ax, 0D000h
+        jae END_KI
+
         mov playerPositionY, ax
    
         call PRINT_PLAYER
