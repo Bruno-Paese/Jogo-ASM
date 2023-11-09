@@ -1,4 +1,4 @@
-                                                                .model small
+.model small
 
 .stack 200H ; define a stack of 256 bytes (100H)
 
@@ -51,8 +51,8 @@
     uiRegionStart equ 57600
     uiHealthBarStart equ 59205
     uiTimeBarStart equ 59385
-    playerInitialPosition equ 30420
-    playerPositionY dw 29780
+    playerInitialPosition equ 29915
+    playerPositionY dw 29915
    
     ;UI widths
     healthBarWidth dw 130
@@ -483,6 +483,7 @@ GAME_TIMER proc
     push ax
     push dx
     push cx
+    push di
    
     mov ax, timer
     sub ax, timeBarScaleDecrement
@@ -509,10 +510,12 @@ GAME_TIMER proc
 
     cmp cx, 0
     jne SKIP_END_CONDITION
-    MOV SI, 1
-   
+    
+    ; ToDo:
+    ; Call de final de jogo (por tempo)
    
     SKIP_END_CONDITION:
+        pop di
         pop cx
         pop dx
         pop ax
@@ -649,7 +652,7 @@ SPAWN_SPRITE_END_SCREEN proc
     mov ax, screenWidth 
     ;mov dx, 0 ; prints always in first line for debbuging
     mul dx
-    add ax, 310 ; Para printar no final da linha
+    add ax, 319 ; Para printar no final da linha
     mov di, ax
     call PRINT_SPRITE
     mov ax, es:[di]
@@ -665,7 +668,7 @@ endp
 ; Parametros:
 ; DI: posicao inicial do sprite
 ; Retorno:
-; SI: endereço do sprite
+; SI: endereco do sprite
 GET_SPRITE proc
     push di
     push ax
@@ -780,7 +783,7 @@ MAIN_GAME proc
 
     MAIN_LOOP:
    
-    ;call GAME_TIMER
+        ;call GAME_TIMER
         call READ_KEYBOARD_INPUT
         
         call CLEAR_KEYBOARD_BUFFER
@@ -829,15 +832,15 @@ INICIO:
 
     call SET_VIDEO_MODE
 
-    ;call MENU_INICIAL
+    call MENU_INICIAL
    
-    ;or bh, bh ; Verifica opcao selecionada (se deve sair do jogo)
-    ;jnz SAIR_JOGO
+    or bh, bh ; Verifica opcao selecionada (se deve sair do jogo)
+    jnz SAIR_JOGO
    
-    ;call CLEAR_SCREEN
+    call CLEAR_SCREEN
    
     ; Jogo
-    ;call PRINT_UI
+    call PRINT_UI
     call MAIN_GAME
    
     SAIR_JOGO:
