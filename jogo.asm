@@ -990,9 +990,30 @@ HANDLE_PLAYER_COLLISION proc
     
     CHECK_PLAYER_COLLISION_HANDLER:
     ; TODO: Implementar acao que deve ser feita ao colidir
+    call GET_SPRITE
+    
+    cmp si, offset shieldSprite
+    jne CHECK_PLAYER_COLLISION_HEALTH
+    ; Bateu em um escudo
+    
+    ; ---------------------
+    jmp CHECK_PLAYER_COLLISION_REMOVE_SPRITE
+    CHECK_PLAYER_COLLISION_HEALTH:
+    ;health (case 2)
+    cmp si, offset healthSprite
+    jne CHECK_PLAYER_COLLISION_ASTEROID
+    ; Bateu em uma vida
+    
+    ; ---------------------
+    jmp CHECK_PLAYER_COLLISION_REMOVE_SPRITE
+    CHECK_PLAYER_COLLISION_ASTEROID:
+    cmp si, offset asteroidSprite
+    jne CHECK_PLAYER_COLLISION_REMOVE_SPRITE
+    ; Bateu em um asteroide
+    
+    ; ---------------------
+    CHECK_PLAYER_COLLISION_REMOVE_SPRITE:
     call REMOVE_SPRITE
-    ;call PRINT_PIXEL
-    ;jmp SAIR_JOGO
 
     CHECK_PLAYER_COLLISION_BREAK:
     
