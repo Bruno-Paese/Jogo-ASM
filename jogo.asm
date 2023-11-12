@@ -49,8 +49,8 @@
     uiRegionStart equ 57600
     uiHealthBarStart equ 59205
     uiTimeBarStart equ 59385
-    playerInitialPosition equ 29915
-    playerPositionY dw 29915
+    playerInitialPosition equ 29914
+    playerPositionY dw 29914 ; Precisa ser par
    
     ;UI widths
     healthBarWidth dw 130
@@ -79,6 +79,19 @@
     ;   preferentialy, use values dividible by the same divisors of 250. ex: 10 (10), 12 (2), 65 (5)
     asteroidSpawnCycle equ 50
     maxSpawnCycle equ 249 ; Controls when counter should reset (Must be less than 255, otherwise code must be changed)
+    
+    ; Configuracoes de jogo
+    
+    ; Nivel 1
+    ; asteroidSpeed = 1
+    ; spawnColumnPosition = 319
+    
+    ; Nivel 2
+    ; asteroidSpeed = 2
+    ; spawnColumnPosition = 318
+    
+    asteroidSpeed db 1
+    spawnColumnPosition db 319
     
 .code
 
@@ -658,7 +671,7 @@ SPAWN_SPRITE_END_SCREEN proc
     mov ax, screenWidth 
     ;mov dx, 0 ; prints always in first line for debbuging
     mul dx
-    add ax, 319 ; Para printar no final da linha
+    add ax, spawnColumnPosition ; Para printar no final da linha
     mov di, ax
     call PRINT_SPRITE
     mov ax, es:[di]
@@ -720,17 +733,21 @@ endp
 MOVE_SPRITE_LEFT proc
     push si
     push di
+    push bx
     push ax
     
     mov si, di
     inc si
     mov al, es:[si]
     call GET_SPRITE
-    call REMOVE_SPRITE           
-    dec di
+    call REMOVE_SPRITE
+    xor bx, bx
+    mov bl, asteroidSpeed
+    sub di, bx
     call PRINT_SPRITE
           
-    pop ax      
+    pop ax 
+    pop bx    
     pop di
     pop si
     ret
