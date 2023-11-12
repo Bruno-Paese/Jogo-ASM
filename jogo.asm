@@ -91,7 +91,7 @@
     ; spawnColumnPosition = 318
     
     asteroidSpeed db 1
-    spawnColumnPosition db 319
+    spawnColumnPosition dw 319
     
 .code
 
@@ -797,7 +797,7 @@ MOVE_SPRITES proc
     ret  
 endp
 
-; Retorna a posição do primeiro pixel do objeto a partir de qualquer pixel da primeira coluna
+; Retorna a posi??o do primeiro pixel do objeto a partir de qualquer pixel da primeira coluna
 ; Parametros:
 ; DI: Pixel na qual foi identificada a colis?o frontal
 ; Retorno
@@ -822,7 +822,7 @@ GET_OBJECT_FROM_FRONTSIDE_COLLISION proc
     ret
 endp
 
-; Retorna a posição do primeiro pixel do objeto a partir de qualquer pixel desde que o primeiro pixel não tenha sido destruido
+; Retorna a posi??o do primeiro pixel do objeto a partir de qualquer pixel desde que o primeiro pixel n?o tenha sido destruido
 ; Parametros:
 ; DI: Pixel na qual foi identificada a colis?o na parte superior
 ; Retorno
@@ -858,10 +858,10 @@ GET_OBJECT_FROM_TOPSIDE_COLLISION proc
     ret
 endp
 
-; Retorna a posição do primeiro pixel do objeto a partir 
+; Retorna a posi??o do primeiro pixel do objeto a partir 
 ; de qualquer pixel seguindo as seguintes etapas:
-; - Vai até a primeira coluna do pixel que estiver
-; - Vai até a última linha
+; - Vai at? a primeira coluna do pixel que estiver
+; - Vai at? a ?ltima linha
 ; - Soma dez linhas para chegar ao primeiro pixel
 ; Parametros:
 ; DI: Pixel na qual foi identificada a colis?o na parte inferior
@@ -1065,15 +1065,15 @@ INICIO:
 
     call SET_VIDEO_MODE
 
-    call MENU_INICIAL
+    ;call MENU_INICIAL
    
-    or bh, bh ; Verifica opcao selecionada (se deve sair do jogo)
-    jnz SAIR_JOGO
+    ;or bh, bh ; Verifica opcao selecionada (se deve sair do jogo)
+    ;jnz SAIR_JOGO
    
     call CLEAR_SCREEN
    
     ; Jogo
-    ;call PRINT_UI
+    call PRINT_UI
     call MAIN_GAME
    
     SAIR_JOGO:
