@@ -40,6 +40,7 @@
     ; Codigos:
     ; 255: Primeiro pixel de objeto que se move para a esquerda
     spaceshipSprite db 0,0,0Fh,0Fh,0Fh,0Fh,0Fh,0,0,0,0,0Fh,3,3,3,0,0,0,0,0,0Fh,3,3,0Fh,0,0,0,0,0,0,3,3,0Fh,0Fh,0Fh,0Fh,0Fh,0Fh,0,0,3,0Fh,0Fh,0Fh,0Fh,1,1,0Fh,0Fh,0Fh,3,0Fh,0Fh,0Fh,0Fh,1,1,0Fh,0Fh,0Fh,3,3,0Fh,0Fh,0Fh,0Fh,0Fh,0Fh,0,0,0Fh,3,3,0Fh,0,0,0,0,0,0,0,0Fh,3,3,3,0,0,0,0,0,0,0,0Fh,0Fh,0Fh,0Fh,0Fh,0,0,0    
+    imuneSpaceshipSprite db 0,0,0Fh,0Fh,0Fh,0Fh,0Fh,0,0,0,0,0Fh,5,5,5,0,0,0,0,0,0Fh,5,5,0Fh,0,0,0,0,0,0,5,5,0Fh,0Fh,0Fh,0Fh,0Fh,0Fh,0,0,5,0Fh,0Fh,0Fh,0Fh,1,1,0Fh,0Fh,0Fh,5,0Fh,0Fh,0Fh,0Fh,1,1,0Fh,0Fh,0Fh,5,5,0Fh,0Fh,0Fh,0Fh,0Fh,0Fh,0,0,0Fh,5,5,0Fh,0,0,0,0,0,0,0,0Fh,5,5,5,0,0,0,0,0,0,0,0Fh,0Fh,0Fh,0Fh,0Fh,0,0,0
     asteroidSprite db 255,254,7,7,7,7,7,7,254,254,254,7,7,8,8,8,7,7,7,254,7,7,8,8,8,8,7,7,7,7,7,8,8,8,8,7,7,7,8,7,7,8,8,8,7,7,7,8,8,7,7,8,8,7,7,7,8,8,8,7,7,7,7,7,7,8,8,8,8,7,7,7,7,8,8,8,8,8,7,7,254,7,7,7,8,8,8,7,7,254,254,254,7,7,7,7,7,7,254,254
     shieldSprite db 255,254,254,1,1,1,1,254,254,254,254,254,1,0Fh,0Fh,0Fh,0Fh,1,254,254,254,1,0Fh,1,1,1,1,0Fh,1,254,1,0Fh,1,1,1,1,1,1,0Fh,1,1,0Fh,3,3,3,3,3,3,0Fh,1,1,0Fh,3,3,3,3,3,3,0Fh,1,1,0Fh,0Fh,3,3,3,3,0Fh,0Fh,1,254,1,0Fh,0Fh,3,3,0Fh,0Fh,1,254,254,254,1,0Fh,0Fh,0Fh,0Fh,1,254,254,254,254,254,1,1,1,1,254,254,254
     healthSprite db 255,254,254,2,2,2,2,254,254,254,254,254,2,0Fh,0Fh,0Fh,0Fh,2,254,254,254,2,0Fh,0Fh,2,2,0Fh,0Fh,2,254,2,0Fh,0Fh,0Fh,2,2,0Fh,0Fh,0Fh,2,2,0Fh,2,2,2,2,2,2,0Fh,2,2,0Fh,2,2,2,2,2,2,0Fh,2,2,0Fh,0Fh,0Fh,2,2,0Fh,0Fh,0Fh,2,254,2,0Fh,0Fh,2,2,0Fh,0Fh,2,254,254,254,2,0Fh,0Fh,0Fh,0Fh,2,254,254,254,254,254,2,2,2,2,254,254,254
@@ -92,6 +93,10 @@
     
     asteroidSpeed db 1
     spawnColumnPosition dw 319
+    
+    ; Informacoes do jogo
+    life db 10
+    imunityTime dw 0 ; quando pegar um escudo, seta valor para 5000 (5s)
     
 .code
 
@@ -430,7 +435,7 @@ endp
 PRINT_UI_BAR proc
     push di
     push dx
-
+    
     LOOP_UI_BAR:
         push cx
         rep stosb
@@ -438,8 +443,8 @@ PRINT_UI_BAR proc
         add di, screenWidth
         sub di, cx
         dec dx
-        cmp dx, bx
-        jne LOOP_UI_BAR
+        or dx, dx
+        jnz LOOP_UI_BAR
        
     pop dx
     pop di
@@ -569,13 +574,23 @@ REMOVE_SPRITE proc
 endp
 
 PRINT_PLAYER proc
+    push di
+    push si
 
-    mov SI, offset spaceShipSprite
+    xor di, di
+    cmp di, imunityTime
+    jne PRINT_PLAYER_IMUNE
+        mov SI, offset spaceShipSprite
+        jmp PRINT_PLAYER_ENDIF
+    PRINT_PLAYER_IMUNE:
+        mov SI, offset imuneSpaceshipSprite
+    PRINT_PLAYER_ENDIF:
     mov DI, playerPositionY
 
     call PRINT_SPRITE
    
-   
+    pop si
+    pop di
     ret
 endp
 
@@ -935,6 +950,42 @@ PLAYER_HITBOX proc
     ret
 endp
 
+; Parametros:
+; CX: Vida (0 a 10)
+SET_HEALTH proc
+    push di
+    push dx
+    push cx
+    push bx
+    push ax
+    
+    mov life, cl
+    
+    ; Calcula tamanho da barra de vida em vermelho
+    mov ax, 13
+    mul cx
+    mov bx, ax
+    
+    ; Printa barra
+    mov cx, healthBarWidth
+    mov dx, 10
+    mov di, uiHealthBarStart
+    xor ax, ax
+    call PRINT_UI_BAR
+    
+    mov ax, uiHealthBarColor
+    mov cx, bx
+    call PRINT_UI_BAR
+    
+    pop ax
+    pop bx
+    pop cx
+    pop dx
+    pop di
+    
+    ret
+endp
+
 HANDLE_PLAYER_COLLISION proc
     push di
     push cx
@@ -995,7 +1046,7 @@ HANDLE_PLAYER_COLLISION proc
     cmp si, offset shieldSprite
     jne CHECK_PLAYER_COLLISION_HEALTH
     ; Bateu em um escudo
-    
+    mov imunityTime, 5000
     ; ---------------------
     jmp CHECK_PLAYER_COLLISION_REMOVE_SPRITE
     CHECK_PLAYER_COLLISION_HEALTH:
@@ -1003,13 +1054,23 @@ HANDLE_PLAYER_COLLISION proc
     cmp si, offset healthSprite
     jne CHECK_PLAYER_COLLISION_ASTEROID
     ; Bateu em uma vida
-    
+    mov cx, 10
+    call SET_HEALTH
     ; ---------------------
     jmp CHECK_PLAYER_COLLISION_REMOVE_SPRITE
     CHECK_PLAYER_COLLISION_ASTEROID:
     cmp si, offset asteroidSprite
     jne CHECK_PLAYER_COLLISION_REMOVE_SPRITE
     ; Bateu em um asteroide
+    xor cx, cx
+    
+    ; Estava imune
+    cmp cx, imunityTime
+    jne CHECK_PLAYER_COLLISION_REMOVE_SPRITE
+    
+    mov cl, life
+    dec cl
+    call SET_HEALTH
     
     ; ---------------------
     CHECK_PLAYER_COLLISION_REMOVE_SPRITE:
@@ -1047,7 +1108,7 @@ MAIN_GAME proc
         jz MAIN_LOOP_SPAWN_ASTEROID
         jmp MAIN_LOOP_SPAWN_ASTEROID_END
         MAIN_LOOP_SPAWN_ASTEROID:
-            mov si, offset asteroidSprite
+        mov si, offset asteroidSprite
             call SPAWN_SPRITE_END_SCREEN
         MAIN_LOOP_SPAWN_ASTEROID_END:
 
@@ -1070,6 +1131,19 @@ MAIN_GAME proc
         ;call PLAYER_HITBOX 
         
         
+        ; Decrementa tempo do escudo
+        
+        mov ax, imunityTime
+        or ax, ax
+        jz MAIN_LOOP_NO_SHIELD
+        sub ax, 50
+        mov imunityTime, ax
+        MAIN_LOOP_NO_SHIELD:
+        
+        ; ToDo:
+        ; Verificar se vida e 0 e encerrar jogo
+        ; Criar o Spawn de vida e shield
+        
         inc cx
         call BLOCK_GAME_EXECUTION
    
@@ -1086,10 +1160,10 @@ INICIO:
 
     call SET_VIDEO_MODE
 
-    ;call MENU_INICIAL
+    call MENU_INICIAL
    
-    ;or bh, bh ; Verifica opcao selecionada (se deve sair do jogo)
-    ;jnz SAIR_JOGO
+    or bh, bh ; Verifica opcao selecionada (se deve sair do jogo)
+    jnz SAIR_JOGO
    
     call CLEAR_SCREEN
    
