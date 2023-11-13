@@ -38,21 +38,20 @@
    
     ;Sprites
     ; Codigos:
-    ; 250: Cantos da nave
-    ; 254: Ultimo pixel de objeto que se move para a esquerda
     ; 255: Primeiro pixel de objeto que se move para a esquerda
-    spaceshipSprite db 250,0,0Fh,0Fh,0Fh,0Fh,0Fh,0,0,250,0,0Fh,3,3,3,0,0,0,0,0,0Fh,3,3,0Fh,0,0,0,0,0,0,3,3,0Fh,0Fh,0Fh,0Fh,0Fh,0Fh,0,0,3,0Fh,0Fh,0Fh,0Fh,1,1,0Fh,0Fh,0Fh,3,0Fh,0Fh,0Fh,0Fh,1,1,0Fh,0Fh,0Fh,3,3,0Fh,0Fh,0Fh,0Fh,0Fh,0Fh,0,0,0Fh,3,3,0Fh,0,0,0,0,0,0,0,0Fh,3,3,3,0,0,0,0,0,250,0,0Fh,0Fh,0Fh,0Fh,0Fh,0,0,250    
-    asteroidSprite db 255,0,7,7,7,7,7,7,0,0,0,7,7,8,8,8,7,7,7,0,7,7,8,8,8,8,7,7,7,7,7,8,8,8,8,7,7,7,8,7,7,8,8,8,7,7,7,8,8,7,7,8,8,7,7,7,8,8,8,7,7,7,7,7,7,8,8,8,8,7,7,7,7,8,8,8,8,8,7,7,0,7,7,7,8,8,8,7,7,0,0,0,7,7,7,7,7,7,0,0,254
-    shieldSprite db 255,0,0,1,1,1,1,0,0,0,0,0,1,0Fh,0Fh,0Fh,0Fh,1,0,0,0,1,0Fh,1,1,1,1,0Fh,1,0,1,0Fh,1,1,1,1,1,1,0Fh,1,1,0Fh,3,3,3,3,3,3,0Fh,1,1,0Fh,3,3,3,3,3,3,0Fh,1,1,0Fh,0Fh,3,3,3,3,0Fh,0Fh,1,0,1,0Fh,0Fh,3,3,0Fh,0Fh,1,0,0,0,1,0Fh,0Fh,0Fh,0Fh,1,0,0,0,0,0,1,1,1,1,0,0,254
-    healthSprite db 255,0,0,2,2,2,2,0,0,0,0,0,2,0Fh,0Fh,0Fh,0Fh,2,0,0,0,2,0Fh,0Fh,2,2,0Fh,0Fh,2,0,2,0Fh,0Fh,0Fh,2,2,0Fh,0Fh,0Fh,2,2,0Fh,2,2,2,2,2,2,0Fh,2,2,0Fh,2,2,2,2,2,2,0Fh,2,2,0Fh,0Fh,0Fh,2,2,0Fh,0Fh,0Fh,2,0,2,0Fh,0Fh,2,2,0Fh,0Fh,2,0,0,0,2,0Fh,0Fh,0Fh,0Fh,2,0,0,0,0,0,2,2,2,2,0,0,254
+    spaceshipSprite db 0,0,0Fh,0Fh,0Fh,0Fh,0Fh,0,0,0,0,0Fh,3,3,3,0,0,0,0,0,0Fh,3,3,0Fh,0,0,0,0,0,0,3,3,0Fh,0Fh,0Fh,0Fh,0Fh,0Fh,0,0,3,0Fh,0Fh,0Fh,0Fh,1,1,0Fh,0Fh,0Fh,3,0Fh,0Fh,0Fh,0Fh,1,1,0Fh,0Fh,0Fh,3,3,0Fh,0Fh,0Fh,0Fh,0Fh,0Fh,0,0,0Fh,3,3,0Fh,0,0,0,0,0,0,0,0Fh,3,3,3,0,0,0,0,0,0,0,0Fh,0Fh,0Fh,0Fh,0Fh,0,0,0    
+    imuneSpaceshipSprite db 0,0,0Fh,0Fh,0Fh,0Fh,0Fh,0,0,0,0,0Fh,5,5,5,0,0,0,0,0,0Fh,5,5,0Fh,0,0,0,0,0,0,5,5,0Fh,0Fh,0Fh,0Fh,0Fh,0Fh,0,0,5,0Fh,0Fh,0Fh,0Fh,1,1,0Fh,0Fh,0Fh,5,0Fh,0Fh,0Fh,0Fh,1,1,0Fh,0Fh,0Fh,5,5,0Fh,0Fh,0Fh,0Fh,0Fh,0Fh,0,0,0Fh,5,5,0Fh,0,0,0,0,0,0,0,0Fh,5,5,5,0,0,0,0,0,0,0,0Fh,0Fh,0Fh,0Fh,0Fh,0,0,0
+    asteroidSprite db 255,254,7,7,7,7,7,7,254,254,254,7,7,8,8,8,7,7,7,254,7,7,8,8,8,8,7,7,7,7,7,8,8,8,8,7,7,7,8,7,7,8,8,8,7,7,7,8,8,7,7,8,8,7,7,7,8,8,8,7,7,7,7,7,7,8,8,8,8,7,7,7,7,8,8,8,8,8,7,7,254,7,7,7,8,8,8,7,7,254,254,254,7,7,7,7,7,7,254,254
+    shieldSprite db 255,254,254,1,1,1,1,254,254,254,254,254,1,0Fh,0Fh,0Fh,0Fh,1,254,254,254,1,0Fh,1,1,1,1,0Fh,1,254,1,0Fh,1,1,1,1,1,1,0Fh,1,1,0Fh,3,3,3,3,3,3,0Fh,1,1,0Fh,3,3,3,3,3,3,0Fh,1,1,0Fh,0Fh,3,3,3,3,0Fh,0Fh,1,254,1,0Fh,0Fh,3,3,0Fh,0Fh,1,254,254,254,1,0Fh,0Fh,0Fh,0Fh,1,254,254,254,254,254,1,1,1,1,254,254,254
+    healthSprite db 255,254,254,2,2,2,2,254,254,254,254,254,2,0Fh,0Fh,0Fh,0Fh,2,254,254,254,2,0Fh,0Fh,2,2,0Fh,0Fh,2,254,2,0Fh,0Fh,0Fh,2,2,0Fh,0Fh,0Fh,2,2,0Fh,2,2,2,2,2,2,0Fh,2,2,0Fh,2,2,2,2,2,2,0Fh,2,2,0Fh,0Fh,0Fh,2,2,0Fh,0Fh,0Fh,2,254,2,0Fh,0Fh,2,2,0Fh,0Fh,2,254,254,254,2,0Fh,0Fh,0Fh,0Fh,2,254,254,254,254,254,2,2,2,2,254,254,254
    
     ;Locais de inicio de video
     videoMemStart equ 0A000h
     uiRegionStart equ 57600
     uiHealthBarStart equ 59205
     uiTimeBarStart equ 59385
-    playerInitialPosition equ 29915
-    playerPositionY dw 29915
+    playerInitialPosition equ 29914
+    playerPositionY dw 29914 ; Precisa ser par
    
     ;UI widths
     healthBarWidth dw 130
@@ -81,6 +80,23 @@
     ;   preferentialy, use values dividible by the same divisors of 250. ex: 10 (10), 12 (2), 65 (5)
     asteroidSpawnCycle equ 50
     maxSpawnCycle equ 249 ; Controls when counter should reset (Must be less than 255, otherwise code must be changed)
+    
+    ; Configuracoes de jogo
+    
+    ; Nivel 1
+    ; asteroidSpeed = 1
+    ; spawnColumnPosition = 319
+    
+    ; Nivel 2
+    ; asteroidSpeed = 2
+    ; spawnColumnPosition = 318
+    
+    asteroidSpeed db 1
+    spawnColumnPosition dw 319
+    
+    ; Informacoes do jogo
+    life db 10
+    imunityTime dw 0 ; quando pegar um escudo, seta valor para 5000 (5s)
     
 .code
 
@@ -151,6 +167,14 @@ PRINT_SPRITE proc
         pop di
         pop cx
         pop dx
+    ret
+endp
+
+; Funcao para printar pixel na tela (DEBUG)
+; Parametros
+; DI: Posicao do pixel
+PRINT_PIXEL proc
+    mov es:[di], 0Eh
     ret
 endp
 
@@ -411,7 +435,7 @@ endp
 PRINT_UI_BAR proc
     push di
     push dx
-
+    
     LOOP_UI_BAR:
         push cx
         rep stosb
@@ -419,8 +443,8 @@ PRINT_UI_BAR proc
         add di, screenWidth
         sub di, cx
         dec dx
-        cmp dx, bx
-        jne LOOP_UI_BAR
+        or dx, dx
+        jnz LOOP_UI_BAR
        
     pop dx
     pop di
@@ -550,13 +574,23 @@ REMOVE_SPRITE proc
 endp
 
 PRINT_PLAYER proc
+    push di
+    push si
 
-    mov SI, offset spaceShipSprite
+    xor di, di
+    cmp di, imunityTime
+    jne PRINT_PLAYER_IMUNE
+        mov SI, offset spaceShipSprite
+        jmp PRINT_PLAYER_ENDIF
+    PRINT_PLAYER_IMUNE:
+        mov SI, offset imuneSpaceshipSprite
+    PRINT_PLAYER_ENDIF:
     mov DI, playerPositionY
 
     call PRINT_SPRITE
    
-   
+    pop si
+    pop di
     ret
 endp
 
@@ -652,7 +686,7 @@ SPAWN_SPRITE_END_SCREEN proc
     mov ax, screenWidth 
     ;mov dx, 0 ; prints always in first line for debbuging
     mul dx
-    add ax, 319 ; Para printar no final da linha
+    add ax, spawnColumnPosition ; Para printar no final da linha
     mov di, ax
     call PRINT_SPRITE
     mov ax, es:[di]
@@ -714,17 +748,21 @@ endp
 MOVE_SPRITE_LEFT proc
     push si
     push di
+    push bx
     push ax
     
     mov si, di
     inc si
     mov al, es:[si]
     call GET_SPRITE
-    call REMOVE_SPRITE           
-    dec di
+    call REMOVE_SPRITE
+    xor bx, bx
+    mov bl, asteroidSpeed
+    sub di, bx
     call PRINT_SPRITE
           
-    pop ax      
+    pop ax 
+    pop bx    
     pop di
     pop si
     ret
@@ -774,6 +812,279 @@ MOVE_SPRITES proc
     ret  
 endp
 
+; Retorna a posi??o do primeiro pixel do objeto a partir de qualquer pixel da primeira coluna
+; Parametros:
+; DI: Pixel na qual foi identificada a colis?o frontal
+; Retorno
+; DI: Pixel do in?cio do sprite
+GET_OBJECT_FROM_FRONTSIDE_COLLISION proc
+    push cx
+    push ax
+
+    mov cx, 10
+    mov al, 255
+    GET_OBJECT_FROM_FRONTSIDE_COLLISION_LOOP:
+       cmp al, es:[di]
+       je GET_OBJECT_FROM_FRONTSIDE_COLLISION_BREAK
+       sub di, screenWidth
+       dec cx
+       or cx, cx
+    jnz GET_OBJECT_FROM_FRONTSIDE_COLLISION_LOOP
+    
+    GET_OBJECT_FROM_FRONTSIDE_COLLISION_BREAK:
+    pop ax
+    pop cx
+    ret
+endp
+
+; Retorna a posi??o do primeiro pixel do objeto a partir de qualquer pixel desde que o primeiro pixel n?o tenha sido destruido
+; Parametros:
+; DI: Pixel na qual foi identificada a colis?o na parte superior
+; Retorno
+; DI: Pixel do in?cio do sprite
+GET_OBJECT_FROM_TOPSIDE_COLLISION proc
+    push cx
+    push ax
+    
+    ; Find the first line of the sprite
+    xor ax, ax
+    mov cx, 10
+    GET_OBJECT_FROM_TOPSIDE_COLLISION_LOOP:
+       cmp al, es:[di]
+       je GET_OBJECT_FROM_TOPSIDE_COLLISION_BREAK
+       sub di, screenWidth
+       dec cx
+       or cx, cx
+    jnz GET_OBJECT_FROM_TOPSIDE_COLLISION_LOOP
+    GET_OBJECT_FROM_TOPSIDE_COLLISION_BREAK:
+    add di, screenWidth
+    
+    ;Find the first pixel
+    mov cx, 10
+    mov al, 255
+    std
+    repne scasb
+    cld
+    ; ToDo: Entender porque isso e necessario
+    inc di ; Corrige a posi??o do primeiro pixel do sprite
+    
+    pop ax
+    pop cx
+    ret
+endp
+
+; Retorna a posi??o do primeiro pixel do objeto a partir 
+; de qualquer pixel seguindo as seguintes etapas:
+; - Vai at? a primeira coluna do pixel que estiver
+; - Vai at? a ?ltima linha
+; - Soma dez linhas para chegar ao primeiro pixel
+; Parametros:
+; DI: Pixel na qual foi identificada a colis?o na parte inferior
+; Retorno
+; DI: Pixel do in?cio do sprite
+GET_OBJECT_FROM_BOTTOMSIDE_COLLISION proc
+    push cx
+    push ax
+    
+    ;Find the first column
+    mov cx, 10
+    xor al, 0
+    std
+    repne scasb
+    cld
+    ; ToDo: Entender porque isso e necessario
+    add di, 2 ; Corrige a posi??o do primeiro pixel do sprite
+    
+    ;Find last pixel of first column + 1
+    xor ax, ax
+    mov cx, 10
+    GET_OBJECT_FROM_BOTTOMSIDE_COLLISION_LOOP:
+       cmp al, es:[di]
+       je GET_OBJECT_FROM_BOTTOMSIDE_COLLISION_BREAK
+       add di, screenWidth
+       dec cx
+       or cx, cx
+    jnz GET_OBJECT_FROM_BOTTOMSIDE_COLLISION_LOOP
+    GET_OBJECT_FROM_BOTTOMSIDE_COLLISION_BREAK:
+    
+    ;Find first pixel
+    sub di, 3200 ; (up 10 times)
+    
+    pop ax
+    pop cx
+    ret
+endp
+
+
+; Exibe hitbox do player (DEBUG)
+PLAYER_HITBOX proc
+    push di
+    push cx
+    push ax
+    
+    mov al, 150
+    mov di, playerPositionY
+    sub di, 320
+    mov cx, 11
+    rep stosb
+    
+    add di, 3519; 11 lines above
+    mov cx, 11
+    std
+    rep stosb
+    cld
+    
+    sub di, 3189
+    mov cx, 10
+    PLAYER_HITBOX_LOOP:
+        call PRINT_PIXEL
+        add di, screenWidth
+        dec cx
+        or cx, cx
+        jnz PLAYER_HITBOX_LOOP
+    
+    pop ax
+    pop cx
+    pop di
+    
+    ret
+endp
+
+; Parametros:
+; CX: Vida (0 a 10)
+SET_HEALTH proc
+    push di
+    push dx
+    push cx
+    push bx
+    push ax
+    
+    mov life, cl
+    
+    ; Calcula tamanho da barra de vida em vermelho
+    mov ax, 13
+    mul cx
+    mov bx, ax
+    
+    ; Printa barra
+    mov cx, healthBarWidth
+    mov dx, 10
+    mov di, uiHealthBarStart
+    xor ax, ax
+    call PRINT_UI_BAR
+    
+    mov ax, uiHealthBarColor
+    mov cx, bx
+    call PRINT_UI_BAR
+    
+    pop ax
+    pop bx
+    pop cx
+    pop dx
+    pop di
+    
+    ret
+endp
+
+HANDLE_PLAYER_COLLISION proc
+    push di
+    push cx
+    push ax
+    
+    mov di, playerPositionY
+    sub di, 320
+    mov cx, 10
+    xor al, al 
+    repe scasb
+    je CHECK_PLAYER_COLLISION_BOTTOM
+    
+    ; Collision upside
+    call GET_OBJECT_FROM_TOPSIDE_COLLISION
+    jmp CHECK_PLAYER_COLLISION_HANDLER
+    
+    
+    ; Bottom collision check must come before front collision check since 
+    ; some collision can trigger both and front collision does not handle
+    ; with objects without reference (start pixel with 255)
+    CHECK_PLAYER_COLLISION_BOTTOM:
+    add di, 3520 ; Eleven lines above    
+    std
+    mov cx, 10
+    repe scasb
+    cld   
+    je CHECK_PLAYER_COLLISION_RIGHT
+    
+    ; Collision bottomside
+    call GET_OBJECT_FROM_BOTTOMSIDE_COLLISION
+    jmp CHECK_PLAYER_COLLISION_HANDLER
+    
+    
+    
+    CHECK_PLAYER_COLLISION_RIGHT:
+    sub di, 3190 ; Up 10 pixels, right 10 pixels
+    mov cx, 10
+    CHECK_PLAYER_COLLISION_RIGHT_LOOP:
+        cmp al, es:[di]
+        jne CHECK_PLAYER_COLLIDED_RIGHT
+        add di, screenWidth
+        dec cx
+        or cx, cx
+        jz CHECK_PLAYER_COLLISION_BREAK
+     jmp CHECK_PLAYER_COLLISION_RIGHT_LOOP
+        
+    ; Collision rightside
+    CHECK_PLAYER_COLLIDED_RIGHT:
+    call GET_OBJECT_FROM_FRONTSIDE_COLLISION
+    
+        
+    
+    
+    CHECK_PLAYER_COLLISION_HANDLER:
+    ; TODO: Implementar acao que deve ser feita ao colidir
+    call GET_SPRITE
+    
+    cmp si, offset shieldSprite
+    jne CHECK_PLAYER_COLLISION_HEALTH
+    ; Bateu em um escudo
+    mov imunityTime, 5000
+    ; ---------------------
+    jmp CHECK_PLAYER_COLLISION_REMOVE_SPRITE
+    CHECK_PLAYER_COLLISION_HEALTH:
+    ;health (case 2)
+    cmp si, offset healthSprite
+    jne CHECK_PLAYER_COLLISION_ASTEROID
+    ; Bateu em uma vida
+    mov cx, 10
+    call SET_HEALTH
+    ; ---------------------
+    jmp CHECK_PLAYER_COLLISION_REMOVE_SPRITE
+    CHECK_PLAYER_COLLISION_ASTEROID:
+    cmp si, offset asteroidSprite
+    jne CHECK_PLAYER_COLLISION_REMOVE_SPRITE
+    ; Bateu em um asteroide
+    xor cx, cx
+    
+    ; Estava imune
+    cmp cx, imunityTime
+    jne CHECK_PLAYER_COLLISION_REMOVE_SPRITE
+    
+    mov cl, life
+    dec cl
+    call SET_HEALTH
+    
+    ; ---------------------
+    CHECK_PLAYER_COLLISION_REMOVE_SPRITE:
+    call REMOVE_SPRITE
+
+    CHECK_PLAYER_COLLISION_BREAK:
+    
+    pop ax
+    pop cx
+    pop di
+    
+    ret
+endp
+
 MAIN_GAME proc
 
     xor SI, SI
@@ -797,7 +1108,7 @@ MAIN_GAME proc
         jz MAIN_LOOP_SPAWN_ASTEROID
         jmp MAIN_LOOP_SPAWN_ASTEROID_END
         MAIN_LOOP_SPAWN_ASTEROID:
-            mov si, offset asteroidSprite
+        mov si, offset asteroidSprite
             call SPAWN_SPRITE_END_SCREEN
         MAIN_LOOP_SPAWN_ASTEROID_END:
 
@@ -814,7 +1125,24 @@ MAIN_GAME proc
             xor cx, cx
         MAIN_LOOP_RESET_COUNTER_END:
         
-        call MOVE_SPRITES  
+        call MOVE_SPRITES 
+       
+        call HANDLE_PLAYER_COLLISION
+        ;call PLAYER_HITBOX 
+        
+        
+        ; Decrementa tempo do escudo
+        
+        mov ax, imunityTime
+        or ax, ax
+        jz MAIN_LOOP_NO_SHIELD
+        sub ax, 50
+        mov imunityTime, ax
+        MAIN_LOOP_NO_SHIELD:
+        
+        ; ToDo:
+        ; Verificar se vida e 0 e encerrar jogo
+        ; Criar o Spawn de vida e shield
         
         inc cx
         call BLOCK_GAME_EXECUTION
