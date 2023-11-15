@@ -77,26 +77,34 @@
     
     ;cycles per spawn
     ;   defines the interval between each spawn in main game loop unit
-    ;   preferentialy, use values dividible by the same divisors of 250. ex: 10 (10), 12 (2), 65 (5)
+    ;   each unit value is 50ms
+    ;   preferentialy, use divisors of 200. ex: 10, 20, 25, 50, 100, 200...
     asteroidSpawnCycle equ 50
-    maxSpawnCycle equ 249 ; Controls when counter should reset (Must be less than 255, otherwise code must be changed)
+    shieldSpawnCycle equ 200 ; 200 x 50ms = 10s
+    maxSpawnCycle equ 199 ; Currently do 200 cycles
     
     ; Configuracoes de jogo
     
     ; Nivel 1
+    ; level = 00000000
     ; asteroidSpeed = 1
     ; spawnColumnPosition = 319
+    ; healthKitRemaining = 1
     
     ; Nivel 2
+    ; level = 11111111
     ; asteroidSpeed = 2
     ; spawnColumnPosition = 318
+    ; healthKitRemaining = 1
     
+    healthKitRemaining db 1
+    level db 0
     asteroidSpeed db 1
     spawnColumnPosition dw 319
     
     ; Informacoes do jogo
     life db 10
-    imunityTime dw 0 ; quando pegar um escudo, seta valor para 5000 (5s)
+    imunityTime dw 0 ; quando pegar um escudo, seta valor para 5050 (5s + tempo para aguentar segundo asteroide)
     
 .code
 
@@ -232,20 +240,27 @@ endp
 ; Gera um n?mero aleat?rio considerando o tempo do sistema e a posi??o do player
 ; Parametros
 ; BX: numero aleat?rio maximo + 1
+; SI: numero para diferenciar sprites (pode ser o proprio endereco)
 ; Retorno
-; DX: numero aleaatorio 
+; DX: numero aleatorio 
 GENERATE_RANDOM_NUMBER proc
     push ax
     push bx
-
+    push cx
+    push si
+    
     mov ah, 0
-    int 1ah         ; Interrup??o para pegar a hora do sistema
+    int 1ah         ; Interrupcao para pegar a hora do sistema
+                    ; Destroi CX e DX
 
     mov ax, dx
     add ax, playerPositionY
+    sub ax, si
     xor dx, dx
     div bx
 
+    pop si
+    pop cx
     pop bx
     pop ax
 
@@ -677,6 +692,7 @@ CLEAR_KEYBOARD_BUFFER endp
 SPAWN_SPRITE_END_SCREEN proc
 
     push ax
+    push bx
     push dx
     push si
     push di
@@ -684,15 +700,16 @@ SPAWN_SPRITE_END_SCREEN proc
     mov bx, 170 ; Screen height - sprite size (10) - UI bar size (20)
     call GENERATE_RANDOM_NUMBER
     mov ax, screenWidth 
-    ;mov dx, 0 ; prints always in first line for debbuging
     mul dx
     add ax, spawnColumnPosition ; Para printar no final da linha
     mov di, ax
     call PRINT_SPRITE
     mov ax, es:[di]
+    
     pop di
     pop si
     pop dx
+    pop bx
     pop ax
     
     ret
@@ -1046,7 +1063,7 @@ HANDLE_PLAYER_COLLISION proc
     cmp si, offset shieldSprite
     jne CHECK_PLAYER_COLLISION_HEALTH
     ; Bateu em um escudo
-    mov imunityTime, 5000
+    mov imunityTime, 5050
     ; ---------------------
     jmp CHECK_PLAYER_COLLISION_REMOVE_SPRITE
     CHECK_PLAYER_COLLISION_HEALTH:
@@ -1105,24 +1122,49 @@ MAIN_GAME proc
         mov ax, cx
         div bl
         or ah, ah ; Verifica se resto e zero
-        jz MAIN_LOOP_SPAWN_ASTEROID
-        jmp MAIN_LOOP_SPAWN_ASTEROID_END
-        MAIN_LOOP_SPAWN_ASTEROID:
-        mov si, offset asteroidSprite
+        jnz MAIN_LOOP_SPAWN_ASTEROID_END
+            mov si, offset asteroidSprite
             call SPAWN_SPRITE_END_SCREEN
         MAIN_LOOP_SPAWN_ASTEROID_END:
-
+            
         
-        ; Resets counter when it reaches to max value
-        mov bl, maxSpawnCycle
+        ; Controls shield spawn cycle
+        mov bl, level
+        or bl, bl                       ; Verifica qual level esta
+        jz MAIN_LOOP_SPAWN_SHIELD_END   ; O shield so deve ser spawnado no level 2
+        mov bl, shieldSpawnCycle
         mov ax, cx
         div bl
         or ah, ah ; Verifica se resto e zero
-        jz MAIN_LOOP_RESET_COUNTER
+        jnz MAIN_LOOP_SPAWN_SHIELD_END
+            mov si, offset shieldSprite
+            call SPAWN_SPRITE_END_SCREEN
+        MAIN_LOOP_SPAWN_SHIELD_END:
+
+    
+        ; Controls life spawn cycle
+        ; Health should spawn just if:
+        ; - life is <= 5
+        ; - healthKitRemaining > 0
+        mov bl, life
+        cmp bl, 5
+        jg MAIN_LOOP_SPAWN_HEALTH_END
+        mov bh, healthKitRemaining
+        or bh, bh
+        jz MAIN_LOOP_SPAWN_HEALTH_END
+            dec healthKitRemaining
+            mov si, offset healthSprite
+            call SPAWN_SPRITE_END_SCREEN
+        MAIN_LOOP_SPAWN_HEALTH_END:        
+        
+        
+        ; Resets counter when it reaches to max value
+        cmp cx, maxSpawnCycle
+        je MAIN_LOOP_RESET_COUNTER
         jmp MAIN_LOOP_RESET_COUNTER_END
         MAIN_LOOP_RESET_COUNTER:
-        
             xor cx, cx
+            not cx
         MAIN_LOOP_RESET_COUNTER_END:
         
         call MOVE_SPRITES 
@@ -1132,7 +1174,6 @@ MAIN_GAME proc
         
         
         ; Decrementa tempo do escudo
-        
         mov ax, imunityTime
         or ax, ax
         jz MAIN_LOOP_NO_SHIELD
@@ -1141,8 +1182,8 @@ MAIN_GAME proc
         MAIN_LOOP_NO_SHIELD:
         
         ; ToDo:
-        ; Verificar se vida e 0 e encerrar jogo
-        ; Criar o Spawn de vida e shield
+        ; Verificar se vida e 0 ou tempo e 0 e encerrar jogo
+        ; Corrigir timer
         
         inc cx
         call BLOCK_GAME_EXECUTION
