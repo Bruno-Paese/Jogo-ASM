@@ -68,7 +68,7 @@
    
     ;timer
     timer dw 1300
-    timeBarScaleDecrement equ 1
+    timeBarScaleDecrement dw 1
     timeScaleIntervalCX equ 1
     timeScaleIntervalDX equ 086A0h
    
@@ -79,7 +79,7 @@
     ;   defines the interval between each spawn in main game loop unit
     ;   each unit value is 50ms
     ;   preferentialy, use divisors of 200. ex: 10, 20, 25, 50, 100, 200...
-    asteroidSpawnCycle equ 50
+    asteroidSpawnCycle db 50
     shieldSpawnCycle equ 200 ; 200 x 50ms = 10s
     maxSpawnCycle equ 199 ; Currently do 200 cycles
     
@@ -102,9 +102,11 @@
     asteroidSpeed db 1
     spawnColumnPosition dw 319
     
+    
     ; Informacoes do jogo
     life db 10
     imunityTime dw 0 ; quando pegar um escudo, seta valor para 5050 (5s + tempo para aguentar segundo asteroide)
+    faseAtual db 1
     
 .code
 
@@ -518,6 +520,7 @@ BLOCK_GAME_EXECUTION proc
     ret
 endp
 
+;Temporizador de fase do jogo
 GAME_TIMER proc
     push ax
     push dx
@@ -550,6 +553,8 @@ GAME_TIMER proc
     cmp cx, 0
     jne SKIP_END_CONDITION
     
+    call PROX_FASE
+    
     ; ToDo:
     ; Call de final de jogo (por tempo)
    
@@ -558,6 +563,38 @@ GAME_TIMER proc
         pop cx
         pop dx
         pop ax
+    ret
+endp
+
+;Altera valores para preparar para a pr?xima fase
+PROX_FASE proc
+    push ax
+    ;call CLEAR_SCREEN
+    
+    mov al, faseAtual
+    cmp al, 6
+    jne HANDLE_NEXT_PHASE
+    call CLEAR_SCREEN
+    call MENU_INICIAL
+    
+HANDLE_NEXT_PHASE:
+    inc al
+    mov faseAtual, al
+    
+    mov al, asteroidSpawnCycle
+    
+    sub al, 5
+    mov asteroidSpawnCycle, al
+    
+    mov al, asteroidSpeed
+    inc al
+    mov asteroidSpeed, al
+    
+    mov ax, 1300
+    mov timer, ax
+
+    
+    pop ax
     ret
 endp
 
@@ -1111,7 +1148,7 @@ MAIN_GAME proc
 
     MAIN_LOOP:
    
-        ;call GAME_TIMER
+        call GAME_TIMER
         call READ_KEYBOARD_INPUT
         
         call CLEAR_KEYBOARD_BUFFER
