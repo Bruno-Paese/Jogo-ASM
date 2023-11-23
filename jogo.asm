@@ -14,6 +14,7 @@
     ; Codigos ASCII
     CR equ 13
     LF equ 10
+    SPACE equ 32
  
     ;Menu Inicial
     ;41x14
@@ -44,7 +45,8 @@
     asteroidSprite db 255,254,7,7,7,7,7,7,254,254,254,7,7,8,8,8,7,7,7,254,7,7,8,8,8,8,7,7,7,7,7,8,8,8,8,7,7,7,8,7,7,8,8,8,7,7,7,8,8,7,7,8,8,7,7,7,8,8,8,7,7,7,7,7,7,8,8,8,8,7,7,7,7,8,8,8,8,8,7,7,254,7,7,7,8,8,8,7,7,254,254,254,7,7,7,7,7,7,254,254
     shieldSprite db 255,254,254,1,1,1,1,254,254,254,254,254,1,0Fh,0Fh,0Fh,0Fh,1,254,254,254,1,0Fh,1,1,1,1,0Fh,1,254,1,0Fh,1,1,1,1,1,1,0Fh,1,1,0Fh,3,3,3,3,3,3,0Fh,1,1,0Fh,3,3,3,3,3,3,0Fh,1,1,0Fh,0Fh,3,3,3,3,0Fh,0Fh,1,254,1,0Fh,0Fh,3,3,0Fh,0Fh,1,254,254,254,1,0Fh,0Fh,0Fh,0Fh,1,254,254,254,254,254,1,1,1,1,254,254,254
     healthSprite db 255,254,254,2,2,2,2,254,254,254,254,254,2,0Fh,0Fh,0Fh,0Fh,2,254,254,254,2,0Fh,0Fh,2,2,0Fh,0Fh,2,254,2,0Fh,0Fh,0Fh,2,2,0Fh,0Fh,0Fh,2,2,0Fh,2,2,2,2,2,2,0Fh,2,2,0Fh,2,2,2,2,2,2,0Fh,2,2,0Fh,0Fh,0Fh,2,2,0Fh,0Fh,0Fh,2,254,2,0Fh,0Fh,2,2,0Fh,0Fh,2,254,254,254,2,0Fh,0Fh,0Fh,0Fh,2,254,254,254,254,254,2,2,2,2,254,254,254
-   
+    shootColor db 30
+    
     ;Locais de inicio de video
     videoMemStart equ 0A000h
     uiRegionStart equ 57600
@@ -106,6 +108,8 @@
     ; Informacoes do jogo
     life db 10
     imunityTime dw 0 ; quando pegar um escudo, seta valor para 5050 (5s + tempo para aguentar segundo asteroide)
+    fireRate equ 1000 ; um segundo entre cada disparo
+    fireCooldown dw 0 ; Tempo de cooldown
     
 .code
 
@@ -672,6 +676,10 @@ READ_KEYBOARD_INPUT proc
     cmp al, 's'      ; Check if the key is 's'
     je PLAYER_DOWN
     
+    
+    cmp al, SPACE
+    je SHOOT
+    
     jmp END_KI
    
     PLAYER_UP:
@@ -698,6 +706,20 @@ READ_KEYBOARD_INPUT proc
         call PRINT_PLAYER
         jmp END_KI
 
+    SHOOT:
+        ; Verifica se esta em tempo de cooldown
+        mov ax, fireCooldown
+        or ax, ax
+        jnz END_KI
+        ; Procede com o tiro
+        mov di, playerPositionY
+        add di, 1612 ; Moves shoot to the front middle of spaceship
+        mov al, shootColor
+        mov es:[di], al
+        mov ax, fireRate
+        mov fireCooldown, ax
+        jmp END_KI
+        
     END_KI:
         pop bx
         pop ax
@@ -834,8 +856,38 @@ MOVE_SPRITES proc
     mov bx, screenWidth
     xor di, di
     
+    MOVE_SPRITES_SHOOT_LOOP:
+        mov al, shootColor
+        repne scasb
+        jne MOVE_SPRITES_SHOOT_LOOP_BREAK
+        
+        dec di ; Corrige posi??o do tiro
+        
+        ; Calcula se deve mover ou remover tiro
+        mov ax, di
+        add ax, 3 ; Para verificar a futura posi??o e n?o a atual
+        xor dx, dx
+        div bx
+        cmp dx, 10 ; Verifica se o resto ? menor que 10 para remover o tiro
+        jl MOVE_SPRITES_SHOOT_REMOVE
+            ; Cria novo tiro dois pixels a frente
+            mov dl, shootColor 
+            mov es:[di+2], dl 
+        MOVE_SPRITES_SHOOT_REMOVE:
+        ; Remove tiro
+        xor dx, dx
+        mov es:[di], dl
+        
+        ; Configura registradores para voltar ao loop e evitar mover o mesmo tiro
+        sub cx, 3 
+        add di, 4
+    jmp MOVE_SPRITES_SHOOT_LOOP
+    
+    MOVE_SPRITES_SHOOT_LOOP_BREAK:
+    mov cx, 63999
+    
     MOVE_SPRITES_LOOP:
-    mov al, 255
+        mov al, 255
         repne scasb
         jne MOVE_SPRITES_BREAK
         dec di
@@ -1216,6 +1268,14 @@ MAIN_GAME proc
         sub ax, 50
         mov imunityTime, ax
         MAIN_LOOP_NO_SHIELD:
+        
+        ; Decrementa cooldown do tiro
+        mov ax, fireCooldown
+        or ax, ax
+        jz MAIN_LOOP_FIRE_READY
+        sub ax, 50
+        mov fireCooldown, ax
+        MAIN_LOOP_FIRE_READY:
         
         ; ToDo:
         ; Verificar se vida e 0 ou tempo e 0 e encerrar jogo
