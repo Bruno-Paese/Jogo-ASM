@@ -68,7 +68,7 @@
    
     ;timer
     timer dw 1300
-    timeBarScaleDecrement dw 1
+    timeBarScaleDecrement dw 13
     timeScaleIntervalCX equ 1
     timeScaleIntervalDX equ 086A0h
    
@@ -106,7 +106,6 @@
     ; Informacoes do jogo
     life db 10
     imunityTime dw 0 ; quando pegar um escudo, seta valor para 5050 (5s + tempo para aguentar segundo asteroide)
-    faseAtual db 1
     
 .code
 
@@ -571,7 +570,7 @@ PROX_FASE proc
     push ax
     ;call CLEAR_SCREEN
     
-    mov al, faseAtual
+    mov al, level
     cmp al, 6
     jne HANDLE_NEXT_PHASE
     call CLEAR_SCREEN
@@ -579,7 +578,7 @@ PROX_FASE proc
     
 HANDLE_NEXT_PHASE:
     inc al
-    mov faseAtual, al
+    mov level, al
     
     mov al, asteroidSpawnCycle
     
