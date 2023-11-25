@@ -843,6 +843,34 @@ MOVE_SPRITE_LEFT proc
     ret
 endp
 
+; Verify if bullet colided, remove bullet and sprite if its an asteroid
+CHECK_BULLET_COLISION proc
+    push ax
+    push di
+    push si
+
+    mov al, es:[di+1]
+    or al, al ; Pixel nao tem nada
+    jz CHECK_BULLET_COLISION_END
+        xor ax, ax
+        mov es:[di], ax
+        call GET_OBJECT_FROM_FRONTSIDE_COLLISION
+        call GET_SPRITE
+        cmp si, offset asteroidSprite
+        jne CHECK_BULLET_COLISION_REMOVE_BULLET
+        
+        CHECK_BULLET_COLISION_REMOVE_BULLET:
+        
+        
+    CHECK_BULLET_COLISION_END:
+    
+    pop si
+    pop di
+    pop ax
+    
+    ret
+endp
+
 ; Move all sprites from the screen (asteroid, shield and heal)
 ; Sem parametros
 MOVE_SPRITES proc
@@ -850,37 +878,47 @@ MOVE_SPRITES proc
     push bx
     push cx
     push di
+    push bp
     push dx
     
     mov cx, 63999
-    mov bx, screenWidth
+    mov si, screenWidth
     xor di, di
     
+    ; Obtem velocidade do tiro
+    xor bx, bx
+    mov bl, asteroidSpeed
+    add bl, bl ; Tiro e duas vezes velocidade do asteroide
+        
     MOVE_SPRITES_SHOOT_LOOP:
         mov al, shootColor
         repne scasb
         jne MOVE_SPRITES_SHOOT_LOOP_BREAK
         
-        dec di ; Corrige posi??o do tiro
+        dec di ; Corrige posicao do tiro
         
-        ; Calcula se deve mover ou remover tiro
-        mov ax, di
-        add ax, 3 ; Para verificar a futura posi??o e n?o a atual
-        xor dx, dx
-        div bx
-        cmp dx, 10 ; Verifica se o resto ? menor que 10 para remover o tiro
-        jl MOVE_SPRITES_SHOOT_REMOVE
-            ; Cria novo tiro dois pixels a frente
-            mov dl, shootColor 
-            mov es:[di+2], dl 
-        MOVE_SPRITES_SHOOT_REMOVE:
         ; Remove tiro
         xor dx, dx
         mov es:[di], dl
+        ; Calcula se deve mover ou so remover tiro
+        mov ax, di
+        add ax, bx ; Para verificar a futura posicao e nao a atual
+        xor dx, dx
+        mov si, screenWidth
+        div si
+        cmp dx, 20 ; Margem no inicio da tela para deletar o tiro
+        jl MOVE_SPRITES_SHOOT_SKIP_MOVEMENT
+            ; Cria novo tiro
+            mov dl, shootColor
+            add di, bx ; Incrementa velocidade do tiro
+            mov es:[di], dl
+            call CHECK_BULLET_COLISION 
+        MOVE_SPRITES_SHOOT_SKIP_MOVEMENT:
         
         ; Configura registradores para voltar ao loop e evitar mover o mesmo tiro
-        sub cx, 3 
-        add di, 4
+        add di, bx
+        sub cx, bx
+        dec cx 
     jmp MOVE_SPRITES_SHOOT_LOOP
     
     MOVE_SPRITES_SHOOT_LOOP_BREAK:
@@ -895,9 +933,11 @@ MOVE_SPRITES proc
         ; Calcula se deve mover ou remover sprite
         mov ax, di
         xor dx, dx
-        div bx
-        or dx, dx
-        jz MOVE_SPRITES_REMOVE
+        div si
+        xor ax, ax
+        mov al, asteroidSpeed
+        cmp dx, ax ; Margem do lado direito para deletar
+        jl MOVE_SPRITES_REMOVE
             call MOVE_SPRITE_LEFT
             jmp MOVE_SPRITES_CONDITION_END
         MOVE_SPRITES_REMOVE:
@@ -909,6 +949,7 @@ MOVE_SPRITES proc
     
     MOVE_SPRITES_BREAK:
     pop dx
+    pop si
     pop di
     pop cx
     pop bx
@@ -942,7 +983,7 @@ GET_OBJECT_FROM_FRONTSIDE_COLLISION proc
     ret
 endp
 
-; Retorna a posi??o do primeiro pixel do objeto a partir de qualquer pixel desde que o primeiro pixel n?o tenha sido destruido
+; Retorna a posicao do primeiro pixel do objeto a partir de qualquer pixel desde que o primeiro pixel n?o tenha sido destruido
 ; Parametros:
 ; DI: Pixel na qual foi identificada a colis?o na parte superior
 ; Retorno
@@ -970,8 +1011,7 @@ GET_OBJECT_FROM_TOPSIDE_COLLISION proc
     std
     repne scasb
     cld
-    ; ToDo: Entender porque isso e necessario
-    inc di ; Corrige a posi??o do primeiro pixel do sprite
+    inc di ; Corrige a posicao do primeiro pixel do sprite
     
     pop ax
     pop cx
@@ -980,8 +1020,8 @@ endp
 
 ; Retorna a posi??o do primeiro pixel do objeto a partir 
 ; de qualquer pixel seguindo as seguintes etapas:
-; - Vai at? a primeira coluna do pixel que estiver
-; - Vai at? a ?ltima linha
+; - Vai ate a primeira coluna do pixel que estiver
+; - Vai ate a ultima linha
 ; - Soma dez linhas para chegar ao primeiro pixel
 ; Parametros:
 ; DI: Pixel na qual foi identificada a colis?o na parte inferior
@@ -1190,6 +1230,81 @@ HANDLE_PLAYER_COLLISION proc
     ret
 endp
 
+HEALTH_SPAWN_CYCLE proc
+    push bx
+    push si
+
+    ; Controls life spawn cycle
+    ; Health should spawn just if:
+    ; - life is <= 5
+    ; - healthKitRemaining > 0
+    mov bl, life
+    cmp bl, 5
+    jg HEALTH_SPAWN_CYCLE_END
+    mov bh, healthKitRemaining
+    or bh, bh
+    jz HEALTH_SPAWN_CYCLE_END
+        dec healthKitRemaining
+        mov si, offset healthSprite
+        call SPAWN_SPRITE_END_SCREEN
+    HEALTH_SPAWN_CYCLE_END:   
+    
+    pop si
+    pop bx
+    ret
+endp
+
+; Parametros
+; CX: Contador de ciclos
+SHIELD_SPAWN_CYCLE proc
+    push ax
+    push bx
+    push si
+
+    ; Controls shield spawn cycle
+    mov bl, level
+    or bl, bl                       ; Verifica qual level esta
+    jz MAIN_LOOP_SPAWN_SHIELD_END   ; O shield so deve ser spawnado no level 2
+    mov bl, shieldSpawnCycle
+    mov ax, cx
+    div bl
+    or ah, ah ; Verifica se resto e zero
+    jnz MAIN_LOOP_SPAWN_SHIELD_END
+        mov si, offset shieldSprite
+        call SPAWN_SPRITE_END_SCREEN
+    MAIN_LOOP_SPAWN_SHIELD_END:
+
+        
+    pop si
+    pop bx
+    pop ax
+    ret
+endp
+
+; Parametros
+; CX: Contador de ciclos
+ASTEROID_SPAWN_CYCLE proc
+    push ax
+    push bx
+    push si
+
+    ; Controls asteroid spawn cycle
+    mov bl, asteroidSpawnCycle
+    mov ax, cx
+    div bl
+    or ah, ah ; Verifica se resto e zero
+    jnz MAIN_LOOP_SPAWN_ASTEROID_END
+        mov si, offset asteroidSprite
+        call SPAWN_SPRITE_END_SCREEN
+    MAIN_LOOP_SPAWN_ASTEROID_END:
+        
+    pop si
+    pop bx
+    pop ax
+        
+    ret
+endp
+
 MAIN_GAME proc
 
     xor SI, SI
@@ -1204,46 +1319,9 @@ MAIN_GAME proc
         
         call CLEAR_KEYBOARD_BUFFER
 
-        
-        ; Controls asteroid spawn cycle
-        mov bl, asteroidSpawnCycle
-        mov ax, cx
-        div bl
-        or ah, ah ; Verifica se resto e zero
-        jnz MAIN_LOOP_SPAWN_ASTEROID_END
-            mov si, offset asteroidSprite
-            call SPAWN_SPRITE_END_SCREEN
-        MAIN_LOOP_SPAWN_ASTEROID_END:
-            
-        
-        ; Controls shield spawn cycle
-        mov bl, level
-        or bl, bl                       ; Verifica qual level esta
-        jz MAIN_LOOP_SPAWN_SHIELD_END   ; O shield so deve ser spawnado no level 2
-        mov bl, shieldSpawnCycle
-        mov ax, cx
-        div bl
-        or ah, ah ; Verifica se resto e zero
-        jnz MAIN_LOOP_SPAWN_SHIELD_END
-            mov si, offset shieldSprite
-            call SPAWN_SPRITE_END_SCREEN
-        MAIN_LOOP_SPAWN_SHIELD_END:
-
-    
-        ; Controls life spawn cycle
-        ; Health should spawn just if:
-        ; - life is <= 5
-        ; - healthKitRemaining > 0
-        mov bl, life
-        cmp bl, 5
-        jg MAIN_LOOP_SPAWN_HEALTH_END
-        mov bh, healthKitRemaining
-        or bh, bh
-        jz MAIN_LOOP_SPAWN_HEALTH_END
-            dec healthKitRemaining
-            mov si, offset healthSprite
-            call SPAWN_SPRITE_END_SCREEN
-        MAIN_LOOP_SPAWN_HEALTH_END:        
+        call ASTEROID_SPAWN_CYCLE
+        call SHIELD_SPAWN_CYCLE
+        call HEALTH_SPAWN_CYCLE     
         
         
         ; Resets counter when it reaches to max value
@@ -1276,10 +1354,6 @@ MAIN_GAME proc
         sub ax, 50
         mov fireCooldown, ax
         MAIN_LOOP_FIRE_READY:
-        
-        ; ToDo:
-        ; Verificar se vida e 0 ou tempo e 0 e encerrar jogo
-        ; Corrigir timer
         
         inc cx
         call BLOCK_GAME_EXECUTION
