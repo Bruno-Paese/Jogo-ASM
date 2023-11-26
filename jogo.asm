@@ -322,6 +322,7 @@ endp
 
 ; recebe em ax o offset do texto
 ; recebe em cx o tamanho do texto
+; bl cor
 PRINT_GAME_TEXT proc
    
     push bp
@@ -332,7 +333,6 @@ PRINT_GAME_TEXT proc
     mov bp, ax; Text to print
     mov dh, 0 ; Line to print
     mov dl, 0 ; Column to print
-    mov bl, 50 ; Color
    
     call PRINT_TEXT
    
@@ -435,6 +435,7 @@ MENU_INICIAL proc
     ; TODO: salvar contexto
     mov ax, offset gameName
     mov cx, 574 ; Size of string printed
+    mov bl, 0Ah
     call PRINT_GAME_TEXT  
 
     mov si, offset spaceshipSprite
@@ -516,9 +517,34 @@ DEFEAT_SCREEN proc
     push dx
     push ax
 
+    mov cx, 16000
+    mov SI, 0
+
+    LOOP_DEATH_SCREEN: 
+        mov es:[SI], 4
+        inc SI
+        mov es:[SI], 4
+        inc SI
+        mov es:[SI], 4
+        inc SI
+        mov es:[SI], 4
+        inc SI
+
+        push cx
+        mov ah, 86h
+        mov cx, 0
+        mov dx, 0001h
+        int 15h
+
+        pop cx
+    loop LOOP_DEATH_SCREEN
+
+    call CLEAR_SCREEN
+
     ; TODO: salvar contexto
     mov ax, offset defeatText
     mov cx, 360
+    mov bl, 0Fh
     call PRINT_GAME_TEXT
 
     mov ah, 86h
@@ -538,13 +564,39 @@ SUCCESS_SCREEN proc
     push dx
     push ax
 
+    mov cx, 16000
+    mov SI, 0
+
+    LOOP_SUCCESS_SCREEN:
+        mov es:[SI], 14
+        inc SI
+        mov es:[SI], 14
+        inc SI
+        mov es:[SI], 14
+        inc SI
+        mov es:[SI], 14
+        inc SI
+
+        push cx
+        mov ah, 86h
+        mov cx, 0
+        mov dx, 0001h
+        int 15h
+
+        pop cx
+    loop LOOP_SUCCESS_SCREEN
+
+    call CLEAR_SCREEN
+
+
     ; TODO: salvar contexto
     mov ax, offset sucessText
     mov cx, 240
+    mov bl, 0Fh
     call PRINT_GAME_TEXT
 
     mov ah, 86h
-    mov cx, 60
+    mov cx, 50
     mov dx, 086A0h
     int 15h
    
@@ -688,17 +740,11 @@ PROX_FASE proc
     push si
     
     mov al, level
-    cmp al, 6
+    cmp al, 2
     jne HANDLE_NEXT_PHASE
 
-    call CLEAR_SCREEN
     call SUCCESS_SCREEN
-    call INICIO
-
-    pop si
-    pop cx
-    pop ax
-    ret
+    jmp INICIO
 
 HANDLE_NEXT_PHASE:
     call CLEAR_SCREEN
@@ -733,7 +779,7 @@ HANDLE_NEXT_PHASE:
     mov imunityTime, ax
     mov fireCooldown, ax
     
-    ; Remove tiros da memória
+    ; Remove tiros da mem?ria
     push es
     mov ax, ds
     mov es, ax
@@ -1612,6 +1658,8 @@ INICIO:
     mov es, ax
 
     call SET_VIDEO_MODE
+
+    call SUCCESS_SCREEN
 
     call MENU_INICIAL
    
