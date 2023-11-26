@@ -679,11 +679,13 @@ endp
 ;Altera valores para preparar para a pr?xima fase
 PROX_FASE proc
     push ax
+	push cx
 
     mov al, level
     cmp al, 6
     jne HANDLE_NEXT_PHASE
 
+	call CLEAR_SCREEN
 	call SUCCESS_SCREEN
 	call INICIO
 
@@ -695,7 +697,12 @@ HANDLE_NEXT_PHASE:
     call PROX_FASE_MENU
 	call CLEAR_SCREEN
 
+	xor cx, cx
+
 	call PRINT_UI
+	mov cl, life
+	call SET_HEALTH
+
     inc al
     mov level, al
     
@@ -711,7 +718,7 @@ HANDLE_NEXT_PHASE:
     mov ax, 1300
     mov timer, ax
 
-    
+    pop cx
     pop ax
     ret
 endp
@@ -1220,6 +1227,14 @@ SET_HEALTH proc
     push ax
     
     mov life, cl
+
+	cmp cl, 0
+	jne SKIP_HP_END_CONDITION
+	call CLEAR_SCREEN
+	call DEFEAT_SCREEN
+	call INICIO
+
+	SKIP_HP_END_CONDITION:
     
     ; Calcula tamanho da barra de vida em vermelho
     mov ax, 13
