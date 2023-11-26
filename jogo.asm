@@ -32,7 +32,13 @@
              db "          \/  \/ \__,_|\__, |          ", CR, LF
              db "                        __/ |          ", CR, LF
              db "                       |___/           ", CR, LF
-   
+
+    nextPhaseText db " ____  ____  ____ ___  _ _  _      ____    _____ ____  ____  _____", CR, LF
+                  db "/  __\/  __\/  _ \\  \/// \/ \__/|/  _ \  /    //  _ \/ ___\/  __/", CR, LF
+                  db "|  \/||  \/|| / \| \  / | || |\/||| / \|  |  __\| / \||    \|  \  ", CR, LF
+                  db "|  __/|    /| \_/| /  \ | || |  ||| |-||  | |   | |-||\___ ||  /_ ", CR, LF
+                  db "\_/   \_/\_\\____//__/\\\_/\_/  \|\_/ \|  \_/   \_/ \|\____/\____\", CR, LF
+
     jogar db "Jogar"
     sair db "Sair"
     selectedOption db "[] "
@@ -278,18 +284,18 @@ endp
 ;                                                                                               ;
 ;-----------------------------------------------------------------------------------------------;
 
-; Sem parametros
-PRINT_GAME_NAME proc
+; recebe em ax o offset do texto
+; recebe em cx o tamanho do texto
+PRINT_GAME_TEXT proc
    
     push bp
     push dx
     push cx
     push bx
 
-    mov bp, offset gameName ; Text to print
+    mov bp, ax; Text to print
     mov dh, 0 ; Line to print
     mov dl, 0 ; Column to print
-    mov cx, 574 ; Size of string printed
     mov bl, 50 ; Color
    
     call PRINT_TEXT
@@ -391,7 +397,9 @@ endp
 ; Destroi BX
 MENU_INICIAL proc
     ; TODO: salvar contexto
-    call PRINT_GAME_NAME  
+    mov ax, offset gameName
+    mov cx, 574 ; Size of string printed
+    call PRINT_GAME_TEXT  
 
     mov si, offset spaceshipSprite
     mov di, 40400
@@ -438,6 +446,49 @@ MENU_INICIAL proc
    
     ; Acao de aceitar
     MENU_INICIAL_ACCEPT:
+    ret
+endp
+
+; Sem parametros
+; Retorno
+; bh
+;   zero: sair
+;   um: jogar
+; Destroi BX
+PROX_FASE_MENU proc
+    ; TODO: salvar contexto
+    mov ax, offset nextPhaseText
+    call PRINT_GAME_TEXT
+   
+    call PRINT_OPTIONS
+   
+    xor bh, bh ; Seta opcao para Jogar
+   
+    PROX_FASE_CONTROLE:
+    call PRINT_OPTION_SELECTED
+    mov ah, 00h   ; Input do teclado (considera as setas)
+    int 16h
+   
+    ; Enter
+    cmp ah, accept
+    jz PROX_FASE_ACCEPT
+   
+    ; Seta para cima ou para baixo
+    cmp ah, upArrow
+    jz PROX_FASE_OPTION
+    cmp ah, downArrow
+    jz PROX_FASE_OPTION
+   
+    ; Qualquer outra tecla
+    jmp PROX_FASE_CONTROLE
+   
+    ; Acao das setas
+    PROX_FASE_OPTION:
+    not bh
+    jmp PROX_FASE_CONTROLE
+   
+    ; Acao de aceitar
+    PROX_FASE_ACCEPT:
     ret
 endp
 
@@ -572,14 +623,14 @@ endp
 ;Altera valores para preparar para a pr?xima fase
 PROX_FASE proc
     push ax
-    ;call CLEAR_SCREEN
+    call CLEAR_SCREEN
     
+    call PROX_FASE_MENU
+
     mov al, level
     cmp al, 6
     jne HANDLE_NEXT_PHASE
-    call CLEAR_SCREEN
-    call MENU_INICIAL
-    
+
 HANDLE_NEXT_PHASE:
     inc al
     mov level, al
