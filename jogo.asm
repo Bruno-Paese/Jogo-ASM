@@ -33,11 +33,42 @@
              db "                        __/ |          ", CR, LF
              db "                       |___/           ", CR, LF
 
-    nextPhaseText db " ____  ____  ____ ___  _ _  _      ____    _____ ____  ____  _____", CR, LF
-                  db "/  __\/  __\/  _ \\  \/// \/ \__/|/  _ \  /    //  _ \/ ___\/  __/", CR, LF
-                  db "|  \/||  \/|| / \| \  / | || |\/||| / \|  |  __\| / \||    \|  \  ", CR, LF
-                  db "|  __/|    /| \_/| /  \ | || |  ||| |-||  | |   | |-||\___ ||  /_ ", CR, LF
-                  db "\_/   \_/\_\\____//__/\\\_/\_/  \|\_/ \|  \_/   \_/ \|\____/\____\", CR, LF
+    nextPhaseText db "______              _                 ", CR, LF
+					db "| ___ \            (_)                ", CR, LF
+					db "| |_/ / __ _____  ___ _ __ ___   __ _ ", CR, LF
+					db "|  __/ '__/ _ \ \/ / | '_ ` _ \ / _` |", CR, LF
+					db "| |  | | | (_) >  <| | | | | | | (_| |", CR, LF
+					db "\_|  |_|  \___/_/\_\_|_| |_| |_|\__,_|", CR, LF
+					db "                                      ", CR, LF
+					db "                                      ", CR, LF
+					db "  __                                  ", CR, LF
+					db " / _|                                 ", CR, LF
+					db "| |_ __ _ ___  ___                    ", CR, LF
+					db "|  _/ _` / __|/ _ \                   ", CR, LF
+					db "| || (_| \__ \  __/                   ", CR, LF
+					db "|_| \__,_|___/\___|                   ", CR, LF
+					db "                                      ", CR, LF
+					db "                                      ", CR, LF
+
+	defeatText db "                              ", CR, LF
+				db "     _____                    ", CR, LF
+				db "    |  |  |___ ___ ___        ", CR, LF
+				db "    |  |  | . |  _| -_|       ", CR, LF
+				db "     \___/|___|___|___|       ", CR, LF
+				db "                              ", CR, LF
+				db "                           __ ", CR, LF
+				db " _____           _        |  |", CR, LF
+				db "|  _  |___ ___ _| |___ _ _|  |", CR, LF
+				db "|   __| -_|  _| . | -_| | |__|", CR, LF
+				db "|__|  |___|_| |___|___|___|__|", CR, LF
+				db "                              ", CR, LF
+
+	sucessText db "                                   __ ", CR, LF
+    db " _____             _              |  |", CR, LF
+    db "|  _  |___ ___ ___| |_ ___ ___ ___|  |", CR, LF
+    db "|   __| .'|  _| .'| . | -_|   |_ -|__|", CR, LF
+    db "|__|  |__,|_| |__,|___|___|_|_|___|__|", CR, LF
+    db "                                      ", CR, LF
 
     jogar db "Jogar"
     sair db "Sair"
@@ -454,44 +485,69 @@ endp
 ; bh
 ;   zero: sair
 ;   um: jogar
-; Destroi BX
 PROX_FASE_MENU proc
+	push cx
+    push dx
+    push ax
+
     ; TODO: salvar contexto
     mov ax, offset nextPhaseText
+	mov cx, 570
     call PRINT_GAME_TEXT
+
+    mov ah, 86h
+    mov cx, 50
+    mov dx, 086A0h
+    int 15h
    
-    call PRINT_OPTIONS
-   
-    xor bh, bh ; Seta opcao para Jogar
-   
-    PROX_FASE_CONTROLE:
-    call PRINT_OPTION_SELECTED
-    mov ah, 00h   ; Input do teclado (considera as setas)
-    int 16h
-   
-    ; Enter
-    cmp ah, accept
-    jz PROX_FASE_ACCEPT
-   
-    ; Seta para cima ou para baixo
-    cmp ah, upArrow
-    jz PROX_FASE_OPTION
-    cmp ah, downArrow
-    jz PROX_FASE_OPTION
-   
-    ; Qualquer outra tecla
-    jmp PROX_FASE_CONTROLE
-   
-    ; Acao das setas
-    PROX_FASE_OPTION:
-    not bh
-    jmp PROX_FASE_CONTROLE
-   
-    ; Acao de aceitar
-    PROX_FASE_ACCEPT:
-    ret
+    pop ax
+    pop dx
+    pop cx
+	ret
 endp
 
+DEFEAT_SCREEN proc
+	push cx
+    push dx
+    push ax
+
+    ; TODO: salvar contexto
+    mov ax, offset defeatText
+	mov cx, 360
+    call PRINT_GAME_TEXT
+
+    mov ah, 86h
+    mov cx, 50
+    mov dx, 086A0h
+    int 15h
+   
+    pop ax
+    pop dx
+    pop cx
+	ret
+endp
+
+SUCCESS_SCREEN proc
+	call CLEAR_SCREEN
+	push cx
+    push dx
+    push ax
+
+    ; TODO: salvar contexto
+    mov ax, offset sucessText
+	mov cx, 240
+    call PRINT_GAME_TEXT
+
+    mov ah, 86h
+    mov cx, 60
+    mov dx, 086A0h
+    int 15h
+   
+    pop ax
+    pop dx
+    pop cx
+	ret
+endp
 ;-----------------------------------------------------------------------------------------------;
 ;                                                                                               ;
 ;  FUNCOES DO JOGO                                                                              ;
@@ -623,15 +679,23 @@ endp
 ;Altera valores para preparar para a pr?xima fase
 PROX_FASE proc
     push ax
-    call CLEAR_SCREEN
-    
-    call PROX_FASE_MENU
 
     mov al, level
     cmp al, 6
     jne HANDLE_NEXT_PHASE
 
+	call SUCCESS_SCREEN
+	call INICIO
+
+	pop ax
+	ret
+
 HANDLE_NEXT_PHASE:
+    call CLEAR_SCREEN
+    call PROX_FASE_MENU
+	call CLEAR_SCREEN
+
+	call PRINT_UI
     inc al
     mov level, al
     
@@ -1372,7 +1436,7 @@ MAIN_GAME proc
 
         call ASTEROID_SPAWN_CYCLE
         call SHIELD_SPAWN_CYCLE
-        call HEALTH_SPAWN_CYCLE     
+        call HEALTH_SPAWN_CYCLE
         
         
         ; Resets counter when it reaches to max value
