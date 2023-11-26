@@ -204,7 +204,7 @@ PRINT_PIXEL proc
 endp
 
 ; Parametros:
-; bp: Rndere?o da mem?ria com texto a ser escrito
+; bp: Endereco da memoria com texto a ser escrito
 ; dh: Linha
 ; dl: Coluna
 ; cx: Tamanho da string
@@ -402,14 +402,13 @@ endp
 ;   um: jogar
 ; Destroi BX
 MENU_INICIAL proc
-    ; TODO: salvar contexto
     push di
     push si
     push ax
-
-	mov ax, offset gameName
+    
+    mov ax, offset gameName
     mov cx, 574 ; Size of string printed
-    call PRINT_GAME_NAME  
+    call PRINT_GAME_TEXT  
 
     mov si, offset spaceshipSprite
     mov di, 40400
@@ -471,7 +470,9 @@ endp
 ;   um: jogar
 ; Destroi BX
 PROX_FASE_MENU proc
-    ; TODO: salvar contexto
+    push ax
+    push bx
+    
     mov ax, offset nextPhaseText
     call PRINT_GAME_TEXT
    
@@ -505,6 +506,9 @@ PROX_FASE_MENU proc
     ; Acao de aceitar
     PROX_FASE_ACCEPT:
     ret
+    
+    pop bx
+    pop ax
 endp
 
 ;-----------------------------------------------------------------------------------------------;
@@ -636,10 +640,14 @@ endp
 ;Altera valores para preparar para a pr?xima fase
 PROX_FASE proc
     push ax
-    ;call CLEAR_SCREEN
-    
+    push di
+
+    call CLEAR_SCREEN
+    call PROX_FASE_MENU
+
     mov al, level
     cmp al, 6
+    
     jne HANDLE_NEXT_PHASE
     call CLEAR_SCREEN
     call MENU_INICIAL
@@ -986,6 +994,78 @@ MOVE_SPRITE_LEFT proc
     ret
 endp
 
+; Verify if bullet colided, remove bullet and sprite if its an asteroid
+; Parametros
+; CX: Velocidade do tiro
+; DI: Posicao do tiro
+CHECK_BULLETS_COLISION proc
+    push ax
+    push bx
+    push cx
+    push di
+    push si
+    
+    xor bx, bx
+    CHECK_BULLETS_COLISION_LOOP:
+        inc bx
+        cmp bx, cx
+        jg CHECK_BULLET_COLISION_END
+        mov al, es:[di+bx]
+        or al, al ; Pixel nao tem nada
+    jz CHECK_BULLETS_COLISION_LOOP
+    
+    call REMOVE_SHOOT
+    add di, bx
+    call GET_OBJECT_FROM_SHOOT_COLLISION
+    call GET_SPRITE
+    cmp si, offset asteroidSprite
+    jne CHECK_BULLET_COLISION_END
+        call REMOVE_SPRITE
+    CHECK_BULLET_COLISION_END:
+    pop si
+    pop di
+    pop cx
+    pop bx
+    pop ax
+    
+    ret
+endp
+
+; Retorna a posicao do primeiro pixel do objeto a partir de qualquer pixel desde que o primeiro pixel n?o tenha sido destruido
+; Parametros:
+; DI: Pixel na qual foi identificada a colis?o na parte superior
+; Retorno
+; DI: Pixel do inicio do sprite
+GET_OBJECT_FROM_SHOOT_COLLISION proc
+    push cx
+    push ax
+    
+    ; Find the first line of the sprite
+    xor ax, ax
+    mov cx, 10
+    GET_OBJECT_FROM_SHOOT_COLLISION_LOOP:
+       cmp al, es:[di]
+       je GET_OBJECT_FROM_SHOOT_COLLISION_BREAK
+       sub di, screenWidth
+       dec cx
+       or cx, cx
+       jnz GET_OBJECT_FROM_SHOOT_COLLISION_LOOP
+    GET_OBJECT_FROM_SHOOT_COLLISION_BREAK:
+    add di, screenWidth
+    
+    ;Find the first pixel
+    mov cx, 10
+    mov al, 255
+    std
+    repne scasb
+    cld
+    inc di ; Corrige a posicao do primeiro pixel do sprite
+
+    pop ax
+    pop cx
+    ret
+endp
+
 ; Move all sprites from the screen (asteroid, shield and heal)
 ; Sem parametros
 MOVE_SPRITES proc
@@ -996,36 +1076,40 @@ MOVE_SPRITES proc
     push bp
     push dx
     
-    mov cx, 63999
-    mov bx, screenWidth
+    xor bx, bx
+    mov si, screenWidth
     xor di, di
     
+    ; Obtem velocidade do tiro
+    xor cx, cx
+    mov cl, asteroidSpeed
+    add cl, cl ; Tiro e duas vezes velocidade do asteroide
+        
+    xor ax, ax
     MOVE_SPRITES_SHOOT_LOOP:
-        mov al, shootColor
-        repne scasb
-        jne MOVE_SPRITES_SHOOT_LOOP_BREAK
-        
-        dec di ; Corrige posi??o do tiro
-        
-        ; Calcula se deve mover ou remover tiro
+        mov di, shootsPosition[bx]
+        cmp ax, di
+        je MOVE_SPRITES_SHOOT_SKIP_MOVEMENT
+        call REMOVE_SHOOT
+        ; Calcula se deve mover ou so remover tiro
+        xor dx, dx
         mov ax, di
-        add ax, 3 ; Para verificar a futura posi??o e n?o a atual
+        add ax, cx ; Para verificar a futura posicao e nao a atual
         xor dx, dx
-        div bx
-        cmp dx, 10 ; Verifica se o resto ? menor que 10 para remover o tiro
-        jl MOVE_SPRITES_SHOOT_REMOVE
-            ; Cria novo tiro dois pixels a frente
-            mov dl, shootColor 
-            mov es:[di+2], dl 
-        MOVE_SPRITES_SHOOT_REMOVE:
-        ; Remove tiro
-        xor dx, dx
-        mov es:[di], dl
-        
-        ; Configura registradores para voltar ao loop e evitar mover o mesmo tiro
-        sub cx, 3 
-        add di, 4
-    jmp MOVE_SPRITES_SHOOT_LOOP
+        mov si, screenWidth
+        div si
+        cmp dx, 20 ; Margem no inicio da tela para deletar o tiro
+        jl MOVE_SPRITES_SHOOT_SKIP_MOVEMENT
+            ; Cria novo tiro
+            add di, cx ; Incrementa velocidade do tiro
+            call CREATE_SHOOT
+            call CHECK_BULLETS_COLISION
+        MOVE_SPRITES_SHOOT_SKIP_MOVEMENT:
+        add bx, 2
+        mov dx, shootArraySize
+        add dx, shootArraySize
+        cmp bx, dx
+    jne MOVE_SPRITES_SHOOT_LOOP
     
     mov cx, 63999
     
@@ -1316,8 +1400,85 @@ HANDLE_PLAYER_COLLISION proc
     ret
 endp
 
-MAIN_GAME proc
+HEALTH_SPAWN_CYCLE proc
+    push bx
+    push si
 
+    ; Controls life spawn cycle
+    ; Health should spawn just if:
+    ; - life is <= 5
+    ; - healthKitRemaining > 0
+    mov bl, life
+    cmp bl, 5
+    jg HEALTH_SPAWN_CYCLE_END
+    mov bh, healthKitRemaining
+    or bh, bh
+    jz HEALTH_SPAWN_CYCLE_END
+        dec healthKitRemaining
+        mov si, offset healthSprite
+        call SPAWN_SPRITE_END_SCREEN
+    HEALTH_SPAWN_CYCLE_END:   
+    
+    pop si
+    pop bx
+    ret
+endp
+
+; Parametros
+; CX: Contador de ciclos
+SHIELD_SPAWN_CYCLE proc
+    push ax
+    push bx
+    push si
+
+    ; Controls shield spawn cycle
+    mov bl, level
+    or bl, bl                       ; Verifica qual level esta
+    jz MAIN_LOOP_SPAWN_SHIELD_END   ; O shield so deve ser spawnado no level 2
+    mov bl, shieldSpawnCycle
+    mov ax, cx
+    div bl
+    or ah, ah ; Verifica se resto e zero
+    jnz MAIN_LOOP_SPAWN_SHIELD_END
+        mov si, offset shieldSprite
+        call SPAWN_SPRITE_END_SCREEN
+    MAIN_LOOP_SPAWN_SHIELD_END:
+
+        
+    pop si
+    pop bx
+    pop ax
+    ret
+endp
+
+; Parametros
+; CX: Contador de ciclos
+ASTEROID_SPAWN_CYCLE proc
+    push ax
+    push bx
+    push si
+    ; Controls asteroid spawn cycle
+    mov bl, asteroidSpawnCycle
+    mov ax, cx
+    div bl
+    or ah, ah ; Verifica se resto e zero
+    jnz MAIN_LOOP_SPAWN_ASTEROID_END
+        mov si, offset asteroidSprite
+        call SPAWN_SPRITE_END_SCREEN
+    MAIN_LOOP_SPAWN_ASTEROID_END:
+        
+    pop si
+    pop bx
+    pop ax
+        
+    ret
+endp
+
+MAIN_GAME proc
+    push cx
+    push ax
+    push si
+    
     xor SI, SI
     call PRINT_PLAYER
     
@@ -1330,46 +1491,9 @@ MAIN_GAME proc
         
         call CLEAR_KEYBOARD_BUFFER
 
-        
-        ; Controls asteroid spawn cycle
-        mov bl, asteroidSpawnCycle
-        mov ax, cx
-        div bl
-        or ah, ah ; Verifica se resto e zero
-        jnz MAIN_LOOP_SPAWN_ASTEROID_END
-            mov si, offset asteroidSprite
-            call SPAWN_SPRITE_END_SCREEN
-        MAIN_LOOP_SPAWN_ASTEROID_END:
-            
-        
-        ; Controls shield spawn cycle
-        mov bl, level
-        or bl, bl                       ; Verifica qual level esta
-        jz MAIN_LOOP_SPAWN_SHIELD_END   ; O shield so deve ser spawnado no level 2
-        mov bl, shieldSpawnCycle
-        mov ax, cx
-        div bl
-        or ah, ah ; Verifica se resto e zero
-        jnz MAIN_LOOP_SPAWN_SHIELD_END
-            mov si, offset shieldSprite
-            call SPAWN_SPRITE_END_SCREEN
-        MAIN_LOOP_SPAWN_SHIELD_END:
-
-    
-        ; Controls life spawn cycle
-        ; Health should spawn just if:
-        ; - life is <= 5
-        ; - healthKitRemaining > 0
-        mov bl, life
-        cmp bl, 5
-        jg MAIN_LOOP_SPAWN_HEALTH_END
-        mov bh, healthKitRemaining
-        or bh, bh
-        jz MAIN_LOOP_SPAWN_HEALTH_END
-            dec healthKitRemaining
-            mov si, offset healthSprite
-            call SPAWN_SPRITE_END_SCREEN
-        MAIN_LOOP_SPAWN_HEALTH_END:        
+        call ASTEROID_SPAWN_CYCLE
+        call SHIELD_SPAWN_CYCLE
+        call HEALTH_SPAWN_CYCLE     
         
         
         ; Resets counter when it reaches to max value
