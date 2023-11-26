@@ -52,8 +52,12 @@
     uiRegionStart equ 57600
     uiHealthBarStart equ 59205
     uiTimeBarStart equ 59385
+    
+    ; Locais jogo
     playerInitialPosition equ 29914
     playerPositionY dw 29914 ; Precisa ser par
+    shootArraySize equ 10
+    shootsPosition dw shootArraySize dup(0)
    
     ;UI widths
     healthBarWidth dw 130
@@ -69,8 +73,9 @@
     uiTimeBarColor equ 11
    
     ;timer
-    timer dw 1300
-    timeBarScaleDecrement dw 13
+    levelTime equ 1300 ; Configura o tempo das fases (max: 1300)
+    timer dw levelTime
+    timeBarScaleDecrement dw 5
     timeScaleIntervalCX equ 1
     timeScaleIntervalDX equ 086A0h
    
@@ -81,6 +86,7 @@
     ;   defines the interval between each spawn in main game loop unit
     ;   each unit value is 50ms
     ;   preferentialy, use divisors of 200. ex: 10, 20, 25, 50, 100, 200...
+    ;   max value is 200
     asteroidSpawnCycle db 50
     shieldSpawnCycle equ 200 ; 200 x 50ms = 10s
     maxSpawnCycle equ 199 ; Currently do 200 cycles
@@ -187,7 +193,7 @@ endp
 ; Parametros
 ; DI: Posicao do pixel
 PRINT_PIXEL proc
-    mov es:[di], 0Eh
+    mov es:[di], 40
     ret
 endp
 
@@ -390,7 +396,10 @@ endp
 ;   um: jogar
 ; Destroi BX
 MENU_INICIAL proc
-    ; TODO: salvar contexto
+    push di
+    push si
+    push ax
+    
     call PRINT_GAME_NAME  
 
     mov si, offset spaceshipSprite
@@ -438,6 +447,11 @@ MENU_INICIAL proc
    
     ; Acao de aceitar
     MENU_INICIAL_ACCEPT:
+    
+    pop ax
+    pop si
+    pop di
+    
     ret
 endp
 
@@ -527,9 +541,9 @@ endp
 GAME_TIMER proc
     push ax
     push dx
-    push cx
     push di
-   
+    push cx
+    
     mov ax, timer
     sub ax, timeBarScaleDecrement
     mov timer, ax
@@ -554,16 +568,14 @@ GAME_TIMER proc
     call PRINT_UI_BAR
 
     cmp cx, 0
+    pop cx
     jne SKIP_END_CONDITION
-    
+    xor cx, cx
     call PROX_FASE
     
-    ; ToDo:
-    ; Call de final de jogo (por tempo)
-   
+    
     SKIP_END_CONDITION:
         pop di
-        pop cx
         pop dx
         pop ax
     ret
@@ -572,12 +584,12 @@ endp
 ;Altera valores para preparar para a pr?xima fase
 PROX_FASE proc
     push ax
-    ;call CLEAR_SCREEN
+    push di
     
     mov al, level
     cmp al, 6
-    jne HANDLE_NEXT_PHASE
     call CLEAR_SCREEN
+    jne HANDLE_NEXT_PHASE
     call MENU_INICIAL
     
 HANDLE_NEXT_PHASE:
@@ -593,10 +605,33 @@ HANDLE_NEXT_PHASE:
     inc al
     mov asteroidSpeed, al
     
-    mov ax, 1300
+    mov ax, levelTime
     mov timer, ax
-
     
+    mov ax, playerInitialPosition
+    mov playerPositionY, ax
+    
+    xor ax, ax
+    mov imunityTime, ax
+    mov fireCooldown, ax
+    
+    ; Remove tiros da memória
+    push es
+    mov ax, ds
+    mov es, ax
+    xor ax, ax
+    mov di, offset shootsPosition
+    mov cx, shootArraySize
+    rep stosw
+    pop es
+    
+    ; Regenera a vida
+    mov cx, 10
+    call SET_HEALTH
+    
+    call PRINT_UI
+    
+    pop di
     pop ax
     ret
 endp
@@ -646,6 +681,63 @@ PRINT_PLAYER proc
    
     pop si
     pop di
+    ret
+endp
+
+; Parametros
+; DI: Posicao do tiro
+CREATE_SHOOT proc
+    push ax
+    push bx
+    
+    mov al, shootColor
+    mov es:[di], al
+
+    ; Salva tiro na mem?ria
+    xor bx, bx
+    sub bx, 2
+    xor ax, ax
+    CREATE_SHOOT_LOOP:
+        add bx, 2
+        cmp ax, shootsPosition[bx]       
+    jne CREATE_SHOOT_LOOP
+    
+    mov shootsPosition[bx], di
+    
+    pop bx
+    pop ax
+    
+    ret
+endp
+
+; Parametros
+; DI: posicao do tiro
+REMOVE_SHOOT proc
+    push dx
+    push bx
+    push ax
+    
+    ; Remove tiro da memoria
+    xor bx, bx
+    sub bx, 2    
+    REMOVE_SHOOT_LOOP:
+        add bx, 2    
+        cmp di, shootsPosition[bx]
+    jne REMOVE_SHOOT_LOOP
+    
+    xor dx, dx
+    mov shootsPosition[bx], dx
+    
+    mov al, shootColor
+    cmp al, es:[di]
+    ; Avoids to remove if its not necessary
+    jne REMOVE_SHOOT_SKIP
+        mov es:[di], dl
+    REMOVE_SHOOT_SKIP:
+    
+    pop ax
+    pop bx
+    pop dx
     ret
 endp
 
@@ -714,8 +806,7 @@ READ_KEYBOARD_INPUT proc
         ; Procede com o tiro
         mov di, playerPositionY
         add di, 1612 ; Moves shoot to the front middle of spaceship
-        mov al, shootColor
-        mov es:[di], al
+        call CREATE_SHOOT
         mov ax, fireRate
         mov fireCooldown, ax
         jmp END_KI
@@ -844,30 +935,73 @@ MOVE_SPRITE_LEFT proc
 endp
 
 ; Verify if bullet colided, remove bullet and sprite if its an asteroid
-CHECK_BULLET_COLISION proc
+; Parametros
+; CX: Velocidade do tiro
+; DI: Posicao do tiro
+CHECK_BULLETS_COLISION proc
     push ax
+    push bx
+    push cx
     push di
     push si
-
-    mov al, es:[di+1]
-    or al, al ; Pixel nao tem nada
-    jz CHECK_BULLET_COLISION_END
-        xor ax, ax
-        mov es:[di], ax
-        call GET_OBJECT_FROM_FRONTSIDE_COLLISION
-        call GET_SPRITE
-        cmp si, offset asteroidSprite
-        jne CHECK_BULLET_COLISION_REMOVE_BULLET
-        
-        CHECK_BULLET_COLISION_REMOVE_BULLET:
-        
-        
-    CHECK_BULLET_COLISION_END:
     
+    xor bx, bx
+    CHECK_BULLETS_COLISION_LOOP:
+        inc bx
+        cmp bx, cx
+        jg CHECK_BULLET_COLISION_END
+        mov al, es:[di+bx]
+        or al, al ; Pixel nao tem nada
+    jz CHECK_BULLETS_COLISION_LOOP
+    
+    call REMOVE_SHOOT
+    add di, bx
+    call GET_OBJECT_FROM_SHOOT_COLLISION
+    call GET_SPRITE
+    cmp si, offset asteroidSprite
+    jne CHECK_BULLET_COLISION_END
+        call REMOVE_SPRITE
+    CHECK_BULLET_COLISION_END:
     pop si
     pop di
+    pop cx
+    pop bx
     pop ax
     
+    ret
+endp
+; Retorna a posicao do primeiro pixel do objeto a partir de qualquer pixel desde que o primeiro pixel n?o tenha sido destruido
+; Parametros:
+; DI: Pixel na qual foi identificada a colis?o na parte superior
+; Retorno
+; DI: Pixel do inicio do sprite
+GET_OBJECT_FROM_SHOOT_COLLISION proc
+    push cx
+    push ax
+    
+    ; Find the first line of the sprite
+    xor ax, ax
+    mov cx, 10
+    GET_OBJECT_FROM_SHOOT_COLLISION_LOOP:
+       cmp al, es:[di]
+       je GET_OBJECT_FROM_SHOOT_COLLISION_BREAK
+       sub di, screenWidth
+       dec cx
+       or cx, cx
+       jnz GET_OBJECT_FROM_SHOOT_COLLISION_LOOP
+    GET_OBJECT_FROM_SHOOT_COLLISION_BREAK:
+    add di, screenWidth
+    
+    ;Find the first pixel
+    mov cx, 10
+    mov al, 255
+    std
+    repne scasb
+    cld
+    inc di ; Corrige a posicao do primeiro pixel do sprite
+
+    pop ax
+    pop cx
     ret
 endp
 
@@ -881,47 +1015,41 @@ MOVE_SPRITES proc
     push bp
     push dx
     
-    mov cx, 63999
+    xor bx, bx
     mov si, screenWidth
     xor di, di
     
     ; Obtem velocidade do tiro
-    xor bx, bx
-    mov bl, asteroidSpeed
-    add bl, bl ; Tiro e duas vezes velocidade do asteroide
+    xor cx, cx
+    mov cl, asteroidSpeed
+    add cl, cl ; Tiro e duas vezes velocidade do asteroide
         
+    xor ax, ax
     MOVE_SPRITES_SHOOT_LOOP:
-        mov al, shootColor
-        repne scasb
-        jne MOVE_SPRITES_SHOOT_LOOP_BREAK
-        
-        dec di ; Corrige posicao do tiro
-        
-        ; Remove tiro
-        xor dx, dx
-        mov es:[di], dl
+        mov di, shootsPosition[bx]
+        cmp ax, di
+        je MOVE_SPRITES_SHOOT_SKIP_MOVEMENT
+        call REMOVE_SHOOT
         ; Calcula se deve mover ou so remover tiro
+        xor dx, dx
         mov ax, di
-        add ax, bx ; Para verificar a futura posicao e nao a atual
+        add ax, cx ; Para verificar a futura posicao e nao a atual
         xor dx, dx
         mov si, screenWidth
         div si
         cmp dx, 20 ; Margem no inicio da tela para deletar o tiro
         jl MOVE_SPRITES_SHOOT_SKIP_MOVEMENT
             ; Cria novo tiro
-            mov dl, shootColor
-            add di, bx ; Incrementa velocidade do tiro
-            mov es:[di], dl
-            call CHECK_BULLET_COLISION 
+            add di, cx ; Incrementa velocidade do tiro
+            call CREATE_SHOOT
+            call CHECK_BULLETS_COLISION
         MOVE_SPRITES_SHOOT_SKIP_MOVEMENT:
-        
-        ; Configura registradores para voltar ao loop e evitar mover o mesmo tiro
-        add di, bx
-        sub cx, bx
-        dec cx 
-    jmp MOVE_SPRITES_SHOOT_LOOP
+        add bx, 2
+        mov dx, shootArraySize
+        add dx, shootArraySize
+        cmp bx, dx
+    jne MOVE_SPRITES_SHOOT_LOOP
     
-    MOVE_SPRITES_SHOOT_LOOP_BREAK:
     mov cx, 63999
     
     MOVE_SPRITES_LOOP:
@@ -948,6 +1076,7 @@ MOVE_SPRITES proc
     jmp MOVE_SPRITES_LOOP
     
     MOVE_SPRITES_BREAK:
+    
     pop dx
     pop si
     pop di
@@ -958,26 +1087,22 @@ MOVE_SPRITES proc
     ret  
 endp
 
-; Retorna a posi??o do primeiro pixel do objeto a partir de qualquer pixel da primeira coluna
+; Retorna a posicao do primeiro pixel do objeto a partir de qualquer pixel da primeira coluna
 ; Parametros:
-; DI: Pixel na qual foi identificada a colis?o frontal
+; DI: Pixel na qual foi identificada a colisao frontal
 ; Retorno
-; DI: Pixel do in?cio do sprite
+; DI: Pixel do inicio do sprite
 GET_OBJECT_FROM_FRONTSIDE_COLLISION proc
     push cx
     push ax
 
     mov cx, 10
-    mov al, 255
-    GET_OBJECT_FROM_FRONTSIDE_COLLISION_LOOP:
-       cmp al, es:[di]
-       je GET_OBJECT_FROM_FRONTSIDE_COLLISION_BREAK
-       sub di, screenWidth
-       dec cx
-       or cx, cx
-    jnz GET_OBJECT_FROM_FRONTSIDE_COLLISION_LOOP
+    mov ax, 255
+    std
+    repne scasb
+    cld
+    inc di
     
-    GET_OBJECT_FROM_FRONTSIDE_COLLISION_BREAK:
     pop ax
     pop cx
     ret
@@ -991,7 +1116,7 @@ endp
 GET_OBJECT_FROM_TOPSIDE_COLLISION proc
     push cx
     push ax
-    
+    call PRINT_PIXEL
     ; Find the first line of the sprite
     xor ax, ax
     mov cx, 10
@@ -1037,7 +1162,7 @@ GET_OBJECT_FROM_BOTTOMSIDE_COLLISION proc
     std
     repne scasb
     cld
-    ; ToDo: Entender porque isso e necessario
+    
     add di, 2 ; Corrige a posi??o do primeiro pixel do sprite
     
     ;Find last pixel of first column + 1
@@ -1080,13 +1205,8 @@ PLAYER_HITBOX proc
     cld
     
     sub di, 3189
-    mov cx, 10
-    PLAYER_HITBOX_LOOP:
-        call PRINT_PIXEL
-        add di, screenWidth
-        dec cx
-        or cx, cx
-        jnz PLAYER_HITBOX_LOOP
+    call PRINT_PIXEL
+        
     
     pop ax
     pop cx
@@ -1139,12 +1259,13 @@ HANDLE_PLAYER_COLLISION proc
     mov di, playerPositionY
     sub di, 320
     mov cx, 10
-    xor al, al 
+    xor al, al
     repe scasb
     je CHECK_PLAYER_COLLISION_BOTTOM
     
     ; Collision upside
     call GET_OBJECT_FROM_TOPSIDE_COLLISION
+    
     jmp CHECK_PLAYER_COLLISION_HANDLER
     
     
@@ -1167,25 +1288,13 @@ HANDLE_PLAYER_COLLISION proc
     
     CHECK_PLAYER_COLLISION_RIGHT:
     sub di, 3190 ; Up 10 pixels, right 10 pixels
-    mov cx, 10
-    CHECK_PLAYER_COLLISION_RIGHT_LOOP:
-        cmp al, es:[di]
-        jne CHECK_PLAYER_COLLIDED_RIGHT
-        add di, screenWidth
-        dec cx
-        or cx, cx
-        jz CHECK_PLAYER_COLLISION_BREAK
-     jmp CHECK_PLAYER_COLLISION_RIGHT_LOOP
+    cmp al, es:[di]
+    je CHECK_PLAYER_COLLISION_BREAK
         
     ; Collision rightside
-    CHECK_PLAYER_COLLIDED_RIGHT:
     call GET_OBJECT_FROM_FRONTSIDE_COLLISION
     
-        
-    
-    
     CHECK_PLAYER_COLLISION_HANDLER:
-    ; TODO: Implementar acao que deve ser feita ao colidir
     call GET_SPRITE
     
     cmp si, offset shieldSprite
@@ -1220,7 +1329,7 @@ HANDLE_PLAYER_COLLISION proc
     ; ---------------------
     CHECK_PLAYER_COLLISION_REMOVE_SPRITE:
     call REMOVE_SPRITE
-
+    
     CHECK_PLAYER_COLLISION_BREAK:
     
     pop ax
@@ -1306,7 +1415,10 @@ ASTEROID_SPAWN_CYCLE proc
 endp
 
 MAIN_GAME proc
-
+    push cx
+    push ax
+    push si
+    
     xor SI, SI
     call PRINT_PLAYER
     
@@ -1360,6 +1472,11 @@ MAIN_GAME proc
    
         cmp SI, 1
         jne MAIN_LOOP
+        
+    pop si
+    pop ax
+    pop cx
+        
     ret
 endp
 
@@ -1381,7 +1498,7 @@ INICIO:
     ; Jogo
     call PRINT_UI
     call MAIN_GAME
-   
+    
     SAIR_JOGO:
     mov ax, 4Ch     ; Function to terminate the program
     int 21h         ; Execute
