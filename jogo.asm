@@ -33,22 +33,22 @@
              db "                        __/ |          ", CR, LF
              db "                       |___/           ", CR, LF
 
-    nextPhaseText db "______              _                 ", CR, LF
-                    db "| ___ \            (_)                ", CR, LF
-                    db "| |_/ / __ _____  ___ _ __ ___   __ _ ", CR, LF
-                    db "|  __/ '__/ _ \ \/ / | '_ ` _ \ / _` |", CR, LF
-                    db "| |  | | | (_) >  <| | | | | | | (_| |", CR, LF
-                    db "\_|  |_|  \___/_/\_\_|_| |_| |_|\__,_|", CR, LF
-                    db "                                      ", CR, LF
-                    db "                                      ", CR, LF
-                    db "  __                                  ", CR, LF
-                    db " / _|                                 ", CR, LF
-                    db "| |_ __ _ ___  ___                    ", CR, LF
-                    db "|  _/ _` / __|/ _ \                   ", CR, LF
-                    db "| || (_| \__ \  __/                   ", CR, LF
-                    db "|_| \__,_|___/\___|                   ", CR, LF
-                    db "                                      ", CR, LF
-                    db "                                      ", CR, LF
+    nextPhaseText   db "  _____              _                 ", CR, LF
+                    db " | ___ \            (_)                ", CR, LF
+                    db " | |_/ / __ _____  ___ _ __ ___   __ _ ", CR, LF
+                    db " |  __/ '__/ _ \ \/ / | '_ ` _ \ / _` |", CR, LF
+                    db " | |  | | | (_) >  <| | | | | | | (_| |", CR, LF
+                    db " \_|  |_|  \___/_/\_\_|_| |_| |_|\__,_|", CR, LF
+                    db "                                       ", CR, LF
+                    db "                                       ", CR, LF
+                    db "            __                         ", CR, LF
+                    db "           / _|                        ", CR, LF
+                    db "           | |_ __ _ ___  ___          ", CR, LF
+                    db "           |  _/ _` / __|/ _ \         ", CR, LF
+                    db "           | || (_| \__ \  __/         ", CR, LF
+                    db "           |_| \__,_|___/\___|         ", CR, LF
+                    db "                                       ", CR, LF
+                    db "                                       ", CR, LF
 
     defeatText db "                              ", CR, LF
                 db "     _____                    ", CR, LF
@@ -323,6 +323,7 @@ endp
 ; recebe em ax o offset do texto
 ; recebe em cx o tamanho do texto
 ; bl cor
+; dh: linha
 PRINT_GAME_TEXT proc
    
     push bp
@@ -331,7 +332,6 @@ PRINT_GAME_TEXT proc
     push bx
 
     mov bp, ax; Text to print
-    mov dh, 0 ; Line to print
     mov dl, 0 ; Column to print
    
     call PRINT_TEXT
@@ -436,6 +436,7 @@ MENU_INICIAL proc
     mov ax, offset gameName
     mov cx, 574 ; Size of string printed
     mov bl, 0Ah
+    xor dh, dh
     call PRINT_GAME_TEXT  
 
     mov si, offset spaceshipSprite
@@ -498,7 +499,9 @@ PROX_FASE_MENU proc
 
     ; TODO: salvar contexto
     mov ax, offset nextPhaseText
-    mov cx, 570
+    mov cx, 586
+    mov bx, 30
+    mov dh, 5
     call PRINT_GAME_TEXT
 
     mov ah, 86h
@@ -545,6 +548,7 @@ DEFEAT_SCREEN proc
     mov ax, offset defeatText
     mov cx, 360
     mov bl, 0Fh
+    mov dh, 5
     call PRINT_GAME_TEXT
 
     mov ah, 86h
@@ -559,7 +563,6 @@ DEFEAT_SCREEN proc
 endp
 
 SUCCESS_SCREEN proc
-    call CLEAR_SCREEN
     push cx
     push dx
     push ax
@@ -586,13 +589,12 @@ SUCCESS_SCREEN proc
         pop cx
     loop LOOP_SUCCESS_SCREEN
 
-    call CLEAR_SCREEN
-
 
     ; TODO: salvar contexto
     mov ax, offset sucessText
     mov cx, 240
     mov bl, 0Fh
+    mov dh, 5
     call PRINT_GAME_TEXT
 
     mov ah, 86h
@@ -1659,8 +1661,6 @@ INICIO:
 
     call SET_VIDEO_MODE
 
-    call SUCCESS_SCREEN
-
     call MENU_INICIAL
    
     or bh, bh ; Verifica opcao selecionada (se deve sair do jogo)
@@ -1672,6 +1672,8 @@ INICIO:
     call PRINT_UI
     call MAIN_GAME
    
+    
+    
     SAIR_JOGO:
     mov ax, 4Ch     ; Function to terminate the program
     int 21h         ; Execute
