@@ -50,25 +50,25 @@
                     db "                                       ", CR, LF
                     db "                                       ", CR, LF
 
-    defeatText db "                              ", CR, LF
-                db "     _____                    ", CR, LF
-                db "    |  |  |___ ___ ___        ", CR, LF
-                db "    |  |  | . |  _| -_|       ", CR, LF
-                db "     \___/|___|___|___|       ", CR, LF
-                db "                              ", CR, LF
-                db "                           __ ", CR, LF
-                db " _____           _        |  |", CR, LF
-                db "|  _  |___ ___ _| |___ _ _|  |", CR, LF
-                db "|   __| -_|  _| . | -_| | |__|", CR, LF
-                db "|__|  |___|_| |___|___|___|__|", CR, LF
-                db "                              ", CR, LF
+    defeatText  db "                                    ", CR, LF
+                db "           _____                    ", CR, LF
+                db "          |  |  |___ ___ ___        ", CR, LF
+                db "          |  |  | . |  _| -_|       ", CR, LF
+                db "           \___/|___|___|___|       ", CR, LF
+                db "                                    ", CR, LF
+                db "                                 __ ", CR, LF
+                db "       _____           _        |  |", CR, LF
+                db "      |  _  |___ ___ _| |___ _ _|  |", CR, LF
+                db "      |   __| -_|  _| . | -_| | |__|", CR, LF
+                db "      |__|  |___|_| |___|___|___|__|", CR, LF
+                db "                                    ", CR, LF
 
-    sucessText db "                                   __ ", CR, LF
-    db " _____             _              |  |", CR, LF
-    db "|  _  |___ ___ ___| |_ ___ ___ ___|  |", CR, LF
-    db "|   __| .'|  _| .'| . | -_|   |_ -|__|", CR, LF
-    db "|__|  |__,|_| |__,|___|___|_|_|___|__|", CR, LF
-    db "                                      ", CR, LF
+    sucessText  db "                                    __ ", CR, LF
+                db "  _____             _              |  |", CR, LF
+                db " |  _  |___ ___ ___| |_ ___ ___ ___|  |", CR, LF
+                db " |   __| .'|  _| .'| . | -_|   |_ -|__|", CR, LF
+                db " |__|  |__,|_| |__,|___|___|_|_|___|__|", CR, LF
+                db "                                       ", CR, LF
 
     jogar db "Jogar"
     sair db "Sair"
@@ -276,6 +276,23 @@ CLEAR_SCREEN proc
     mov di, 0
     mov al, 0
     mov cx, 64000
+    rep stosb
+   
+    pop di
+    pop cx
+    pop ax
+  ret
+endp
+
+
+CLEAR_GAME_SCREEN proc
+    push ax
+    push cx
+    push di
+           
+    mov di, 0
+    mov al, 0
+    mov cx, uiRegionStart
     rep stosb
    
     pop di
@@ -518,45 +535,52 @@ endp
 DEFEAT_SCREEN proc
     push cx
     push dx
+    push bx
     push ax
+    
+    mov ax, offset defeatText
+    mov cx, 432
+    mov bl, 248
+    mov dh, 5
+    call PRINT_GAME_TEXT
 
-    mov cx, 16000
+    mov cx, 14400 ; 57600 / 4 (Para não limpar a UI)
     mov SI, 0
-
-    LOOP_DEATH_SCREEN: 
-        mov es:[SI], 4
-        inc SI
-        mov es:[SI], 4
-        inc SI
-        mov es:[SI], 4
-        inc SI
-        mov es:[SI], 4
-        inc SI
+    
+    LOOP_DEATH_SCREEN:
+        mov bl, 4 
+        DEATH_SCREEN_CHUNK:
+            mov al, 28h ; Vermelho
+            mov bh, es:[SI]
+            cmp bh, 248
+            jne DEATH_SCREEN_PRINT_PIXEL 
+                mov al, 0Fh ; Seta para branco para o texto
+            DEATH_SCREEN_PRINT_PIXEL:
+            mov es:[SI], al
+            dec bl
+            inc si
+            or bl, bl
+        jnz DEATH_SCREEN_CHUNK
 
         push cx
         mov ah, 86h
-        mov cx, 0
-        mov dx, 0001h
+        mov al, 0
+        xor cx, cx
+        mov dx, 1
         int 15h
-
         pop cx
+        
     loop LOOP_DEATH_SCREEN
-
-    call CLEAR_SCREEN
-
-    ; TODO: salvar contexto
-    mov ax, offset defeatText
-    mov cx, 360
-    mov bl, 0Fh
-    mov dh, 5
-    call PRINT_GAME_TEXT
 
     mov ah, 86h
     mov cx, 50
     mov dx, 086A0h
     int 15h
+    
+    call CLEAR_GAME_SCREEN
    
     pop ax
+    pop bx
     pop dx
     pop cx
     ret
@@ -565,37 +589,42 @@ endp
 SUCCESS_SCREEN proc
     push cx
     push dx
+    push bx
     push ax
-
-    mov cx, 16000
+    
+    mov ax, offset sucessText
+    mov cx, 246
+    mov bl, 248 ; Printa em preto com outro codigo para saber onde e texto
+    mov dh, 8
+    call PRINT_GAME_TEXT
+    
+    mov cx, 14400 ; 57600 / 4 (Para não limpar a UI)
     mov SI, 0
 
     LOOP_SUCCESS_SCREEN:
-        mov es:[SI], 14
-        inc SI
-        mov es:[SI], 14
-        inc SI
-        mov es:[SI], 14
-        inc SI
-        mov es:[SI], 14
-        inc SI
+        mov bl, 4 
+        SUCCESS_SCREEN_CHUNK:
+            mov al, 74h ; Para usar Amarelo, mudar para 2ch. Tabela de cores em: https://www.fountainware.com/EXPL/vga_color_palettes.htm
+            mov bh, es:[SI]
+            cmp bh, 248
+            jne SUCCESS_SCREEN_PRINT_PIXEL 
+                mov al, 0fh ; Seta para branco para o texto
+            SUCCESS_SCREEN_PRINT_PIXEL:
+            mov es:[SI], al
+            dec bl
+            inc si
+            or bl, bl
+        jnz SUCCESS_SCREEN_CHUNK
 
         push cx
         mov ah, 86h
-        mov cx, 0
-        mov dx, 0001h
+        mov al, 0
+        xor cx, cx
+        mov dx, 1
         int 15h
-
         pop cx
+        
     loop LOOP_SUCCESS_SCREEN
-
-
-    ; TODO: salvar contexto
-    mov ax, offset sucessText
-    mov cx, 240
-    mov bl, 0Fh
-    mov dh, 5
-    call PRINT_GAME_TEXT
 
     mov ah, 86h
     mov cx, 50
@@ -603,6 +632,7 @@ SUCCESS_SCREEN proc
     int 15h
    
     pop ax
+    pop bx
     pop dx
     pop cx
     ret
@@ -749,9 +779,9 @@ PROX_FASE proc
     jmp INICIO
 
 HANDLE_NEXT_PHASE:
-    call CLEAR_SCREEN
+    call CLEAR_GAME_SCREEN
     call PROX_FASE_MENU
-    call CLEAR_SCREEN
+    call CLEAR_GAME_SCREEN
 
     xor cx, cx
 
@@ -794,8 +824,6 @@ HANDLE_NEXT_PHASE:
     ; Regenera a vida
     mov cx, 10
     call SET_HEALTH
-    
-    call PRINT_UI
 
     pop di
     pop cx
