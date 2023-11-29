@@ -112,7 +112,7 @@
     ;timer
     levelTime equ 1300 ; Configura o tempo das fases (max: 1300)
     timer dw levelTime
-    timeBarScaleDecrement dw 5
+    timeBarScaleDecrement dw 2
     timeScaleIntervalCX equ 1
     timeScaleIntervalDX equ 086A0h
    
@@ -149,7 +149,8 @@
     
     ; Informacoes do jogo
     life db 10
-    imunityTime dw 0 ; quando pegar um escudo, seta valor para 5050 (5s + tempo para aguentar segundo asteroide)
+    shieldDuration equ 5050 ; seta valor para 5050 (5s + tempo para aguentar segundo asteroide)
+    imunityTime dw 0
     fireRate equ 1000 ; um segundo entre cada disparo
     fireCooldown dw 0 ; Tempo de cooldown
     
@@ -505,16 +506,11 @@ MENU_INICIAL proc
 endp
 
 ; Sem parametros
-; Retorno
-; bh
-;   zero: sair
-;   um: jogar
-PROX_FASE_MENU proc
+PROX_FASE_MSG proc
     push cx
     push dx
     push ax
 
-    ; TODO: salvar contexto
     mov ax, offset nextPhaseText
     mov cx, 586
     mov bx, 30
@@ -572,12 +568,13 @@ DEFEAT_SCREEN proc
         
     loop LOOP_DEATH_SCREEN
 
+    
+    
     mov ah, 86h
-    mov cx, 50
+    mov al, 0
+    mov cx, 1
     mov dx, 086A0h
     int 15h
-    
-    call CLEAR_GAME_SCREEN
    
     pop ax
     pop bx
@@ -627,7 +624,7 @@ SUCCESS_SCREEN proc
     loop LOOP_SUCCESS_SCREEN
 
     mov ah, 86h
-    mov cx, 50
+    mov cx, 1
     mov dx, 086A0h
     int 15h
    
@@ -754,9 +751,6 @@ GAME_TIMER proc
     
     call PROX_FASE
     
-    ; ToDo:
-    ; Call de final de jogo (por tempo)
-   
     SKIP_END_CONDITION:
         pop di
         pop cx
@@ -772,28 +766,16 @@ PROX_FASE proc
     push si
     
     mov al, level
-    cmp al, 2
-    jne HANDLE_NEXT_PHASE
-
-    call SUCCESS_SCREEN
-    jmp INICIO
-
-HANDLE_NEXT_PHASE:
-    call CLEAR_GAME_SCREEN
-    call PROX_FASE_MENU
-    call CLEAR_GAME_SCREEN
-
-    xor cx, cx
-
-    call PRINT_UI
-    mov cl, life
-    call SET_HEALTH
-
     inc al
     mov level, al
+    cmp al, 2
+    je PROX_FASE_END_GAME
     
+    call CLEAR_GAME_SCREEN
+    call PROX_FASE_MSG
+    call CLEAR_GAME_SCREEN
+
     mov al, asteroidSpawnCycle
-    
     sub al, 5
     mov asteroidSpawnCycle, al
     
@@ -824,6 +806,8 @@ HANDLE_NEXT_PHASE:
     ; Regenera a vida
     mov cx, 10
     call SET_HEALTH
+    
+    PROX_FASE_END_GAME:
 
     pop di
     pop cx
@@ -1044,7 +1028,8 @@ SPAWN_SPRITE_END_SCREEN proc
           
     mov bx, 170 ; Screen height - sprite size (10) - UI bar size (20)
     call GENERATE_RANDOM_NUMBER
-    mov ax, screenWidth 
+    mov ax, screenWidth
+    ;mov dx, 20
     mul dx
     add ax, spawnColumnPosition ; Para printar no final da linha
     mov di, ax
@@ -1299,7 +1284,7 @@ GET_OBJECT_FROM_FRONTSIDE_COLLISION proc
     repne scasb
     cld
     inc di
-    
+
     pop ax
     pop cx
     ret
@@ -1326,7 +1311,7 @@ GET_OBJECT_FROM_TOPSIDE_COLLISION proc
     jnz GET_OBJECT_FROM_TOPSIDE_COLLISION_LOOP
     GET_OBJECT_FROM_TOPSIDE_COLLISION_BREAK:
     add di, screenWidth
-    
+
     ;Find the first pixel
     mov cx, 10
     mov al, 255
@@ -1340,7 +1325,7 @@ GET_OBJECT_FROM_TOPSIDE_COLLISION proc
     ret
 endp
 
-; Retorna a posi??o do primeiro pixel do objeto a partir 
+; Retorna a posicao do primeiro pixel do objeto a partir 
 ; de qualquer pixel seguindo as seguintes etapas:
 ; - Vai ate a primeira coluna do pixel que estiver
 ; - Vai ate a ultima linha
@@ -1359,9 +1344,9 @@ GET_OBJECT_FROM_BOTTOMSIDE_COLLISION proc
     std
     repne scasb
     cld
-    ; ToDo: Entender porque isso e necessario
-    add di, 2 ; Corrige a posi??o do primeiro pixel do sprite
     
+    add di, 2 ; Corrige a posicao do primeiro pixel do sprite
+ 
     ;Find last pixel of first column + 1
     xor ax, ax
     mov cx, 10
@@ -1428,13 +1413,6 @@ SET_HEALTH proc
     
     mov life, cl
 
-    cmp cl, 0
-    jne SKIP_HP_END_CONDITION
-    call CLEAR_SCREEN
-    call DEFEAT_SCREEN
-    call INICIO
-
-    SKIP_HP_END_CONDITION:
     
     ; Calcula tamanho da barra de vida em vermelho
     mov ax, 13
@@ -1468,12 +1446,12 @@ HANDLE_PLAYER_COLLISION proc
     
     mov di, playerPositionY
     sub di, 320
-    mov cx, 10
+    mov cx, 11
     xor al, al 
     repe scasb
     je CHECK_PLAYER_COLLISION_BOTTOM
-    
     ; Collision upside
+    dec di
     call GET_OBJECT_FROM_TOPSIDE_COLLISION
     jmp CHECK_PLAYER_COLLISION_HANDLER
     
@@ -1482,22 +1460,24 @@ HANDLE_PLAYER_COLLISION proc
     ; some collision can trigger both and front collision does not handle
     ; with objects without reference (start pixel with 255)
     CHECK_PLAYER_COLLISION_BOTTOM:
-    add di, 3520 ; Eleven lines above    
+    add di, 3519 ; Eleven lines above, one column to the left  
     std
-    mov cx, 10
+    mov cx, 11
     repe scasb
     cld   
     je CHECK_PLAYER_COLLISION_RIGHT
     
     ; Collision bottomside
+    inc di
     call GET_OBJECT_FROM_BOTTOMSIDE_COLLISION
     jmp CHECK_PLAYER_COLLISION_HANDLER
     
     
     
     CHECK_PLAYER_COLLISION_RIGHT:
-    sub di, 3190 ; Up 10 pixels, right 10 pixels
+    sub di, 3189 ; Up 10 pixels, right 11 pixels
     cmp al, es:[di]
+    
     je CHECK_PLAYER_COLLISION_BREAK
     
     ; Collision rightside
@@ -1509,7 +1489,7 @@ HANDLE_PLAYER_COLLISION proc
     cmp si, offset shieldSprite
     jne CHECK_PLAYER_COLLISION_HEALTH
     ; Bateu em um escudo
-    mov imunityTime, 5050
+    mov imunityTime, shieldDuration
     ; ---------------------
     jmp CHECK_PLAYER_COLLISION_REMOVE_SPRITE
     CHECK_PLAYER_COLLISION_HEALTH:
@@ -1673,11 +1653,30 @@ MAIN_GAME proc
         mov fireCooldown, ax
         MAIN_LOOP_FIRE_READY:
         
+        ; Death
+        mov al, life
+        or al, al
+        jnz SKIP_HP_END_CONDITION
+        call DEFEAT_SCREEN
+        jmp END_GAME
+        SKIP_HP_END_CONDITION:
+        
+        ; Win
+        mov al, level
+        cmp al, 2
+        jne SKIP_WIN
+        call SUCCESS_SCREEN
+        jmp END_GAME
+        SKIP_WIN:
+        
+        
         inc cx
         call BLOCK_GAME_EXECUTION
    
         cmp SI, 1
         jne MAIN_LOOP
+        
+    END_GAME:
     ret
 endp
 
@@ -1699,8 +1698,6 @@ INICIO:
     ; Jogo
     call PRINT_UI
     call MAIN_GAME
-   
-    
     
     SAIR_JOGO:
     mov ax, 4Ch     ; Function to terminate the program
