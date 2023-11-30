@@ -113,7 +113,7 @@
     ; Primeiro valor para o level 1 e segundo para o 2
     levelTime dw 1300, 1300 ; Configura o tempo das fases (max: 1300)
     timer dw 1300 ; Time of level 1
-    timeBarScaleDecrement dw 2
+    timeBarScaleDecrement dw 5
     timeScaleIntervalCX equ 1
     timeScaleIntervalDX equ 086A0h
    
@@ -553,7 +553,7 @@ DEFEAT_SCREEN proc
     mov dh, 5
     call PRINT_GAME_TEXT
 
-    mov cx, 14400 ; 57600 / 4 (Para n?o limpar a UI)
+    mov cx, 2880 ; 57600 / 20 (Para n?o limpar a UI)
     mov SI, 0
     
     LOOP_DEATH_SCREEN:
@@ -608,7 +608,7 @@ SUCCESS_SCREEN proc
     mov dh, 8
     call PRINT_GAME_TEXT
     
-    mov cx, 14400 ; 57600 / 4 (Para n?o limpar a UI)
+    mov cx, 2880 ; 57600 / 20 (Para n?o limpar a UI)
     mov SI, 0
 
     LOOP_SUCCESS_SCREEN:
@@ -1716,7 +1716,7 @@ INICIO:
     ; Jogo
     call PRINT_UI
     call MAIN_GAME
-    call CLEAR_SCREEN
+   
     SAIR_JOGO:
     mov ah, 4Ch     ; Function to terminate the program
     int 21h         ; Execute
