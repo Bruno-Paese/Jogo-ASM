@@ -87,8 +87,8 @@
     ;Locais de inicio de video
     videoMemStart equ 0A000h
     uiRegionStart equ 57600
-    uiHealthBarStart equ 59205
-    uiTimeBarStart equ 59385
+    uiHealthBarStart equ 59385
+    uiTimeBarStart equ 59205
     
     ; Locais de jogo
     playerInitialPosition equ 29914
@@ -106,12 +106,13 @@
    
     ;UI colors
     uiBackgroundColor equ 7
-    uiHealthBarColor equ 4
+    uiHealthBarColor equ 2
     uiTimeBarColor equ 11
    
     ;timer
-    levelTime equ 1300 ; Configura o tempo das fases (max: 1300)
-    timer dw levelTime
+    ; Primeiro valor para o level 1 e segundo para o 2
+    levelTime dw 1300, 1300 ; Configura o tempo das fases (max: 1300)
+    timer dw 1300 ; Time of level 1
     timeBarScaleDecrement dw 2
     timeScaleIntervalCX equ 1
     timeScaleIntervalDX equ 086A0h
@@ -230,7 +231,19 @@ endp
 ; Parametros
 ; DI: Posicao do pixel
 PRINT_PIXEL proc
+    push ax
+    push cx
+    push dx
+    
     mov es:[di], 0Eh
+    mov ah, 86h
+    mov cx, 1
+    mov dx, 086A0h
+    int 15h
+    
+    pop dx
+    pop cx
+    pop ax
     ret
 endp
 
@@ -254,7 +267,7 @@ PRINT_TEXT proc
     mov es, ax
    
     mov bh, 0
-   
+
     mov ah, 13h
     mov al, 1
     int 10h ; Registers destroyed: AX, SP, BP, SI
@@ -540,11 +553,11 @@ DEFEAT_SCREEN proc
     mov dh, 5
     call PRINT_GAME_TEXT
 
-    mov cx, 14400 ; 57600 / 4 (Para não limpar a UI)
+    mov cx, 14400 ; 57600 / 4 (Para n?o limpar a UI)
     mov SI, 0
     
     LOOP_DEATH_SCREEN:
-        mov bl, 4 
+    mov bl, 20 
         DEATH_SCREEN_CHUNK:
             mov al, 28h ; Vermelho
             mov bh, es:[SI]
@@ -595,11 +608,11 @@ SUCCESS_SCREEN proc
     mov dh, 8
     call PRINT_GAME_TEXT
     
-    mov cx, 14400 ; 57600 / 4 (Para não limpar a UI)
+    mov cx, 14400 ; 57600 / 4 (Para n?o limpar a UI)
     mov SI, 0
 
     LOOP_SUCCESS_SCREEN:
-        mov bl, 4 
+        mov bl, 20 
         SUCCESS_SCREEN_CHUNK:
             mov al, 74h ; Para usar Amarelo, mudar para 2ch. Tabela de cores em: https://www.fountainware.com/EXPL/vga_color_palettes.htm
             mov bh, es:[SI]
@@ -762,6 +775,7 @@ endp
 ;Altera valores para preparar para a pr?xima fase
 PROX_FASE proc
     push ax
+    push bx
     push cx
     push si
     
@@ -775,6 +789,12 @@ PROX_FASE proc
     call PROX_FASE_MSG
     call CLEAR_GAME_SCREEN
 
+    mov bx, 2
+    mul bl
+    mov bl, al
+    mov ax, levelTime[bx]
+    mov timer, ax
+    
     mov al, asteroidSpawnCycle
     sub al, 5
     mov asteroidSpawnCycle, al
@@ -782,9 +802,6 @@ PROX_FASE proc
     mov al, asteroidSpeed
     inc al
     mov asteroidSpeed, al
-    
-    mov ax, levelTime
-    mov timer, ax
     
     mov ax, playerInitialPosition
     mov playerPositionY, ax
@@ -811,6 +828,7 @@ PROX_FASE proc
 
     pop di
     pop cx
+    pop bx
     pop ax
     ret
 endp
@@ -941,11 +959,11 @@ READ_KEYBOARD_INPUT proc
     mov ah, 0
     int 16h
 
-    cmp al, 'w'      ; Check if the key is 'w'
+    cmp ah, upArrow      ; Check if the key is 'w'
     je PLAYER_UP
     
     
-    cmp al, 's'      ; Check if the key is 's'
+    cmp ah, downArrow      ; Check if the key is 's'
     je PLAYER_DOWN
     
     
@@ -1029,7 +1047,6 @@ SPAWN_SPRITE_END_SCREEN proc
     mov bx, 170 ; Screen height - sprite size (10) - UI bar size (20)
     call GENERATE_RANDOM_NUMBER
     mov ax, screenWidth
-    ;mov dx, 20
     mul dx
     add ax, spawnColumnPosition ; Para printar no final da linha
     mov di, ax
@@ -1160,6 +1177,8 @@ GET_OBJECT_FROM_SHOOT_COLLISION proc
     push cx
     push ax
     
+    call PRINT_PIXEL
+    
     ; Find the first line of the sprite
     xor ax, ax
     mov cx, 10
@@ -1233,6 +1252,7 @@ MOVE_SPRITES proc
     jne MOVE_SPRITES_SHOOT_LOOP
     
     mov cx, 63999
+    ;jmp MOVE_SPRITES_BREAK
     
     MOVE_SPRITES_LOOP:
         mov al, 255
@@ -1340,13 +1360,12 @@ GET_OBJECT_FROM_BOTTOMSIDE_COLLISION proc
     
     ;Find the first column
     mov cx, 10
-    xor al, 0
+    xor al, al
     std
     repne scasb
     cld
-    
     add di, 2 ; Corrige a posicao do primeiro pixel do sprite
- 
+
     ;Find last pixel of first column + 1
     xor ax, ax
     mov cx, 10
@@ -1460,24 +1479,23 @@ HANDLE_PLAYER_COLLISION proc
     ; some collision can trigger both and front collision does not handle
     ; with objects without reference (start pixel with 255)
     CHECK_PLAYER_COLLISION_BOTTOM:
-    add di, 3519 ; Eleven lines above, one column to the left  
-    std
-    mov cx, 11
-    repe scasb
-    cld   
-    je CHECK_PLAYER_COLLISION_RIGHT
+    add di, 3509 ; Eleven lines above, 10 column to the left  
     
+    mov cx, 10
+    repe scasb
+    
+    je CHECK_PLAYER_COLLISION_RIGHT
     ; Collision bottomside
     inc di
+    
     call GET_OBJECT_FROM_BOTTOMSIDE_COLLISION
     jmp CHECK_PLAYER_COLLISION_HANDLER
     
     
     
     CHECK_PLAYER_COLLISION_RIGHT:
-    sub di, 3189 ; Up 10 pixels, right 11 pixels
+    sub di, 3200 ; Up 10 pixels
     cmp al, es:[di]
-    
     je CHECK_PLAYER_COLLISION_BREAK
     
     ; Collision rightside
@@ -1687,7 +1705,7 @@ INICIO:
     mov es, ax
 
     call SET_VIDEO_MODE
-
+    
     call MENU_INICIAL
    
     or bh, bh ; Verifica opcao selecionada (se deve sair do jogo)
@@ -1698,8 +1716,8 @@ INICIO:
     ; Jogo
     call PRINT_UI
     call MAIN_GAME
-    
+    call CLEAR_SCREEN
     SAIR_JOGO:
-    mov ax, 4Ch     ; Function to terminate the program
+    mov ah, 4Ch     ; Function to terminate the program
     int 21h         ; Execute
 end INICIO
