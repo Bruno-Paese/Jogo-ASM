@@ -4,6 +4,10 @@
 
 .data
 
+    ;
+    ; Código de comandos
+    ;
+
     ; Controles (Scan code)
     ; (codigos para utilizar com a int 16h 00h)
     ; Scan code table: https://www.win.tue.nl/~aeb/linux/kbd/scancodes-1.html
@@ -16,6 +20,10 @@
     LF equ 10
     SPACE equ 32
  
+    ;
+    ; Textos
+    ;
+
     ;Menu Inicial
     ;41x14
     gameName db "    ___      _                 _     _ ", CR, LF
@@ -73,8 +81,11 @@
     jogar db "Jogar"
     sair db "Sair"
     selectedOption db "[] "
-   
-    ;Sprites
+    
+    ;
+    ; Sprites
+    ;
+    
     ; Codigos:
     ; 255: Primeiro pixel de objeto que se move para a esquerda
     spaceshipSprite db 0,0,0Fh,0Fh,0Fh,0Fh,0Fh,0,0,0,0,0Fh,3,3,3,0,0,0,0,0,0Fh,3,3,0Fh,0,0,0,0,0,0,3,3,0Fh,0Fh,0Fh,0Fh,0Fh,0Fh,0,0,3,0Fh,0Fh,0Fh,0Fh,1,1,0Fh,0Fh,0Fh,3,0Fh,0Fh,0Fh,0Fh,1,1,0Fh,0Fh,0Fh,3,3,0Fh,0Fh,0Fh,0Fh,0Fh,0Fh,0,0,0Fh,3,3,0Fh,0,0,0,0,0,0,0,0Fh,3,3,3,0,0,0,0,0,0,0,0Fh,0Fh,0Fh,0Fh,0Fh,0,0,0    
@@ -84,7 +95,11 @@
     healthSprite db 255,254,254,2,2,2,2,254,254,254,254,254,2,0Fh,0Fh,0Fh,0Fh,2,254,254,254,2,0Fh,0Fh,2,2,0Fh,0Fh,2,254,2,0Fh,0Fh,0Fh,2,2,0Fh,0Fh,0Fh,2,2,0Fh,2,2,2,2,2,2,0Fh,2,2,0Fh,2,2,2,2,2,2,0Fh,2,2,0Fh,0Fh,0Fh,2,2,0Fh,0Fh,0Fh,2,254,2,0Fh,0Fh,2,2,0Fh,0Fh,2,254,254,254,2,0Fh,0Fh,0Fh,0Fh,2,254,254,254,254,254,2,2,2,2,254,254,254
     shootColor db 30
     
-    ;Locais de inicio de video
+    ;
+    ; Locais e UI
+    ;
+
+    ; Locais de inicio de video
     videoMemStart equ 0A000h
     uiRegionStart equ 57600
     uiHealthBarStart equ 59385
@@ -96,7 +111,7 @@
     shootArraySize equ 10
     shootsPosition dw shootArraySize dup(0)
    
-    ;UI widths
+    ; UI widths
     healthBarWidth dw 130
     timeBarWidth dw 130
    
@@ -109,6 +124,10 @@
     uiHealthBarColor equ 2
     uiTimeBarColor equ 11
    
+    ;
+    ; Configuracoes de jogo
+    ;
+
     ;timer
     ; Primeiro valor para o level 1 e segundo para o 2
     levelTime dw 1300, 1300 ; Configura o tempo das fases (max: 1300)
@@ -127,20 +146,6 @@
     asteroidSpawnCycle db 50
     shieldSpawnCycle equ 200 ; 200 x 50ms = 10s
     maxSpawnCycle equ 199 ; Currently do 200 cycles
-    
-    ; Configuracoes de jogo
-    
-    ; Nivel 1
-    ; level = 00000000
-    ; asteroidSpeed = 1
-    ; spawnColumnPosition = 319
-    ; healthKitRemaining = 1
-    
-    ; Nivel 2
-    ; level = 11111111
-    ; asteroidSpeed = 2
-    ; spawnColumnPosition = 318
-    ; healthKitRemaining = 1
     
     healthKitRemaining db 1
     level db 0
