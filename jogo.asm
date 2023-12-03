@@ -1,11 +1,11 @@
 .model small
 
-.stack 200H ; define a stack of 256 bytes (100H)
+.stack 200H ; define a stack of 512 bytes (200H)
 
 .data
 
     ;
-    ; Código de comandos
+    ; Codigo de comandos
     ;
 
     ; Controles (Scan code)
@@ -41,6 +41,7 @@
              db "                        __/ |          ", CR, LF
              db "                       |___/           ", CR, LF
 
+    ;39x16
     nextPhaseText   db "  _____              _                 ", CR, LF
                     db " | ___ \            (_)                ", CR, LF
                     db " | |_/ / __ _____  ___ _ __ ___   __ _ ", CR, LF
@@ -58,6 +59,7 @@
                     db "                                       ", CR, LF
                     db "                                       ", CR, LF
 
+    ;36x12
     defeatText  db "                                    ", CR, LF
                 db "           _____                    ", CR, LF
                 db "          |  |  |___ ___ ___        ", CR, LF
@@ -71,6 +73,7 @@
                 db "      |__|  |___|_| |___|___|___|__|", CR, LF
                 db "                                    ", CR, LF
 
+    ;39x6
     sucessText  db "                                    __ ", CR, LF
                 db "  _____             _              |  |", CR, LF
                 db " |  _  |___ ___ ___| |_ ___ ___ ___|  |", CR, LF
@@ -151,7 +154,6 @@
     level db 0
     asteroidSpeed db 1
     spawnColumnPosition dw 319
-    
     
     ; Informacoes do jogo
     life db 10
@@ -468,7 +470,6 @@ endp
 ;   um: jogar
 ; Destroi BX
 MENU_INICIAL proc
-    ; TODO: salvar contexto
     mov ax, offset gameName
     mov cx, 574 ; Size of string printed
     mov bl, 0Ah
