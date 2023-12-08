@@ -146,7 +146,7 @@
     ;   defines the interval between each spawn in main game loop unit
     ;   each unit value is 50ms
     ;   preferentialy, use divisors of 200. ex: 10, 20, 25, 50, 100, 200...
-    asteroidSpawnCycle db 50
+    asteroidSpawnCycle db 15
     shieldSpawnCycle equ 200 ; 200 x 50ms = 10s
     maxSpawnCycle equ 199 ; Currently do 200 cycles
     
@@ -829,6 +829,9 @@ PROX_FASE proc
     ; Regenera a vida
     mov cx, 10
     call SET_HEALTH
+    
+    mov al, 1
+    mov healthKitRemaining, al
     
     PROX_FASE_END_GAME:
 
